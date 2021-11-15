@@ -14,6 +14,11 @@ with DAG(
         task_id="copy_to",
         postgres_conn_id="cratedb_connection",
         sql="""
-                COPY telegraf.metrics WHERE DATE_TRUNC('day', timestamp) = {time}::TIMESTAMP - '1 day'::INTERVAL TO DIRECTORY 's3://{access}:{secret}@crate-astro-tutorial/data'; 
-            """.format(time='{{ ds }}', access=os.environ.get('ACCESS_KEY'), secret=os.environ.get('SECRET_KEY')),
+                COPY telegraf.metrics WHERE DATE_TRUNC('day', timestamp) = {time}::TIMESTAMP - '1 day'::INTERVAL 
+                TO DIRECTORY 's3://{access}:{secret}@crate-astro-tutorial/data_{time}'; 
+            """.format(
+            time="{{ ds }}",
+            access=os.environ.get("ACCESS_KEY"),
+            secret=os.environ.get("SECRET_KEY"),
+        ),
     )
