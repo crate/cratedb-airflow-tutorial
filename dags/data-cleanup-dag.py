@@ -19,8 +19,20 @@ def get_records(sql):
 
 
 def analyze_output(ti):
-    json_output = ti.xcom_pull(task_ids="push_results")
-    logging.info(json_output)
+    policies = ti.xcom_pull(task_ids="push_results")
+    json_object = json.loads(policies)
+    for p in json_object:
+        logging.info(p[2])
+        key = list(p[2].keys())[0]
+        value = p[2][key]
+        logging.info(type(value))
+        PostgresOperator(
+            task_id="delete_from_{table}".format(table=str(p[1])),
+            postgres_conn_id="cratedb_connection",
+            sql="DELETE FROM {schema}.{table} WHERE {column}={value}".format(
+                schema=str(p[0]), table=str(p[1]), column=str(key), value=value
+            ),
+        ).execute(dict())
 
 
 with DAG(
@@ -39,12 +51,14 @@ with DAG(
             dag=dag,
         ),
     )
-    # t2 = PythonOperator(
-    #     task_id="pull_results",
-    #     python_callable=analyze_output,
-    #     provide_context=True,
-    #     op_kwargs={},
-    #     dag=dag,
-    # )
 
-# t1 >> t2
+    t2 = PythonOperator(
+        task_id="delete_records",
+        python_callable=analyze_output,
+        provide_context=True,
+        op_kwargs={},
+        dag=dag,
+    )
+
+
+t1 >> t2
