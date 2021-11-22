@@ -6,6 +6,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
 from config.table_exports import TABLES
 
+
 with DAG(
     dag_id="cratedb_table_export",
     start_date=datetime.datetime(2021, 11, 11),
