@@ -1,7 +1,9 @@
 # crate-astro-tutorial
 Orchestration Project - Astronomer/Airflow tutorials
 
+
 This repository contains examples of Apache Airflow DAGs for automating recurrent queires. All DAGs run on Astronomer infrastructure installed on Ubuntu 20.04.3 LTS.
+
 
 ## Installation
 
@@ -25,6 +27,7 @@ For installation of Astronomer CLI on another operating system, please refer to 
 ## Project files
 
 Project directory has the following file structure:
+
 ```
   ├── dags # directory containing all DAGs
       ├── example-dag.py
@@ -36,7 +39,9 @@ Project directory has the following file structure:
   ├── plugins # custom or community Airflow plugins
   └── requirements.txt # specification of Python packages
 ```
+
 In the `dag` directory you can find specification of all DAGs for our examples:
+
 * `example-dag.py` is generated during project initialization
 * `table-export-dag.py` performs daily export of table data to a remote filesystem (in our case S3)
 
@@ -47,4 +52,19 @@ To start the project on your local machine run:
 `astro dev start`
 
 To access the Apache Airflow UI go to `http://localhost:8081`.
+
 From Airflow UI you can further manage running DAGs, check their status, the time of the next and last run and some metadata. 
+
+### Docker BuildKit issue
+
+If your Docker environment has the [BuildKit feature](https://docs.docker.com/develop/develop-images/build_enhancements/) enabled, you may run into an error when starting the Astronomer project:
+
+```
+$ astro dev start
+Env file ".env" found. Loading...
+buildkit not supported by daemon
+Error: command 'docker build -t astronomer-project_dccf4f/airflow:latest failed: failed to execute cmd: exit status 1
+```
+
+To overcome this issue, start Astronomer without the BuildKit feature: `DOCKER_BUILDKIT=0 astro dev start` (see the [Astronomer Forum](https://forum.astronomer.io/t/buildkit-not-supported-by-daemon-error-command-docker-build-t-airflow-astro-bcb837-airflow-latest-failed-failed-to-execute-cmd-exit-status-1/857)).
+
