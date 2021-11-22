@@ -30,8 +30,14 @@ Project directory has the following file structure:
 
 ```
   ├── dags # directory containing all DAGs
-      ├── example-dag.py
-      ├── table-export-dag.py
+  │   ├── config # configuration files used to parametize DAGs
+  │   │   ├── __init__.py
+  │   │   └── table_exports.py
+  │   ├── data-cleanup-dag.py
+  │   ├── example-dag.py
+  │   ├── nyc-taxi-dag.py
+  ├── include # additional files which are used in DAGs
+  │   └── taxi-insert.sql
   ├── .astro # project settings
   ├── Dockerfile # runtime overrides for Astronomer Docker image
   ├── include # other project files
@@ -44,6 +50,7 @@ In the `dag` directory you can find specification of all DAGs for our examples:
 
 * `example-dag.py` is generated during project initialization
 * `table-export-dag.py` performs daily export of table data to a remote filesystem (in our case S3)
+* `nyc-taxi-dag.py` imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
 
 ## Start the project
 
@@ -53,7 +60,7 @@ To start the project on your local machine run:
 
 To access the Apache Airflow UI go to `http://localhost:8081`.
 
-From Airflow UI you can further manage running DAGs, check their status, the time of the next and last run and some metadata. 
+From Airflow UI you can further manage running DAGs, check their status, the time of the next and last run and some metadata.
 
 ### Docker BuildKit issue
 
@@ -67,4 +74,3 @@ Error: command 'docker build -t astronomer-project_dccf4f/airflow:latest failed:
 ```
 
 To overcome this issue, start Astronomer without the BuildKit feature: `DOCKER_BUILDKIT=0 astro dev start` (see the [Astronomer Forum](https://forum.astronomer.io/t/buildkit-not-supported-by-daemon-error-command-docker-build-t-airflow-astro-bcb837-airflow-latest-failed-failed-to-execute-cmd-exit-status-1/857)).
-
