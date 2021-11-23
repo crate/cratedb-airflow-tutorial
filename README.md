@@ -34,7 +34,6 @@ The project directory has the following file structure:
   │   │   ├── __init__.py
   │   │   └── table_exports.py
   │   ├── data-cleanup-dag.py
-  │   ├── example-dag.py
   │   ├── nyc-taxi-dag.py
   ├── include # additional files which are used in DAGs
   │   └── taxi-insert.sql
@@ -49,7 +48,6 @@ The project directory has the following file structure:
 In the `dag` directory you can find the specification of all DAGs for our examples.
 Each DAG is accompanied by a tutorial:
 
-* `example-dag.py` is generated during project initialization
 * `table-export-dag.py` ([Tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-part-one/901)): performs a daily export of table data to a remote filesystem (in our case S3) -
 * `nyc-taxi-dag.py` imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
 
