@@ -2,7 +2,7 @@
 Orchestration Project - Astronomer/Airflow tutorials
 
 
-This repository contains examples of Apache Airflow DAGs for automating recurrent queires. All DAGs run on Astronomer infrastructure installed on Ubuntu 20.04.3 LTS.
+This repository contains examples of Apache Airflow DAGs for automating recurrent queries. All DAGs run on Astronomer infrastructure installed on Ubuntu 20.04.3 LTS.
 
 
 ## Installation
@@ -26,11 +26,11 @@ For installation of Astronomer CLI on another operating system, please refer to 
 
 ## Project files
 
-Project directory has the following file structure:
+The project directory has the following file structure:
 
 ```
   ├── dags # directory containing all DAGs
-  │   ├── config # configuration files used to parametize DAGs
+  │   ├── config # configuration files used to parameterize DAGs
   │   │   ├── __init__.py
   │   │   └── table_exports.py
   │   ├── data-cleanup-dag.py
@@ -46,10 +46,11 @@ Project directory has the following file structure:
   └── requirements.txt # specification of Python packages
 ```
 
-In the `dag` directory you can find specification of all DAGs for our examples:
+In the `dag` directory you can find the specification of all DAGs for our examples.
+Each DAG is accompanied by a tutorial:
 
 * `example-dag.py` is generated during project initialization
-* `table-export-dag.py` performs daily export of table data to a remote filesystem (in our case S3)
+* `table-export-dag.py` ([Tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-part-one/901)): performs a daily export of table data to a remote filesystem (in our case S3) -
 * `nyc-taxi-dag.py` imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
 
 ## Start the project
