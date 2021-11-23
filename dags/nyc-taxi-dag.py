@@ -60,7 +60,7 @@ def process_new_files(ti):
             dag=dag,
             task_id="log_{url}".format(url=file_name),
             postgres_conn_id="cratedb_demo_connection",
-            sql=Path('/usr/local/airflow/include/taxi-insert.sql').read_text(),
+            sql=Path('include/taxi-insert.sql').read_text(),
         ).execute(dict())
 
         PostgresOperator(
