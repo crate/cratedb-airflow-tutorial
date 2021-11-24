@@ -1,4 +1,4 @@
-# crate-astro-tutorial
+# crate-airflow-tutorial
 Orchestration Project - Astronomer/Airflow tutorials
 
 
