@@ -37,6 +37,7 @@ The project directory has the following file structure:
   ├── include # other project files
   ├── packages.txt # specification of OS-level packages
   ├── plugins # custom or community Airflow plugins
+  ├── setup # additional setup-related scripts/database schemas
   └── requirements.txt # specification of Python packages
 ```
 

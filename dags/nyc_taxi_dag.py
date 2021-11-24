@@ -1,4 +1,13 @@
-"Imports NYC Taxi data from S3 into CrateDB"
+"""
+Imports NYC Taxi data from S3 into CrateDB
+
+Prerequisites
+-------------
+In the CrateDB schema "nyc_taxi", the tables "load_files_processed",
+"load_trips_staging" and "trips" need to be present before running the DAG.
+You can retrieve the CREATE TABLE statements from the file setup/taxi-schema.sql
+in this repository.
+"""
 import datetime
 import logging
 
