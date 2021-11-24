@@ -1,5 +1,5 @@
 project:
-  name: astronomer-project
+  name: crate-airflow-tutorial
 webserver:
   port: 8081
 postgres:
