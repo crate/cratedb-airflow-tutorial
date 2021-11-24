@@ -1,3 +1,8 @@
+"""
+Regularly exports a table's rows to an S3 bucket as JSON files
+
+A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-part-one/901
+"""
 import datetime
 import os
 
