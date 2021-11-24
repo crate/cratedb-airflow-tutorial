@@ -111,6 +111,8 @@ with DAG(
         op_kwargs={},
     )
 
+    clean_data_urls << download_data_urls
+
     get_processed_files = PythonOperator(
         task_id="get_processed_files",
         python_callable=get_processed_files,
@@ -125,17 +127,7 @@ with DAG(
         op_kwargs={},
     )
 
-    clean_data_urls << download_data_urls
     identitfy_missing_urls << [clean_data_urls, get_processed_files]
-
-    process_new_files = PythonOperator(
-        task_id="process_new_files",
-        python_callable=process_new_files,
-        provide_context=True,
-        op_kwargs={},
-    )
-
-    process_new_files << identitfy_missing_urls
 
     # The staging table should be empty already. Purging it again in case of
     # an abort or other error case.
@@ -145,4 +137,11 @@ with DAG(
         sql="DELETE FROM nyc_taxi.load_trips_staging;"
     )
 
-    process_new_files << purge_staging_init
+    process_new_files = PythonOperator(
+        task_id="process_new_files",
+        python_callable=process_new_files,
+        provide_context=True,
+        op_kwargs={},
+    )
+
+    process_new_files << [identitfy_missing_urls, purge_staging_init]
