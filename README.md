@@ -31,12 +31,7 @@ The project directory has the following file structure:
 ```
   ├── dags # directory containing all DAGs
   │   ├── config # configuration files used to parameterize DAGs
-  │   │   ├── __init__.py
-  │   │   └── table_exports.py
-  │   ├── data-cleanup-dag.py
-  │   ├── nyc-taxi-dag.py
   ├── include # additional files which are used in DAGs
-  │   └── taxi-insert.sql
   ├── .astro # project settings
   ├── Dockerfile # runtime overrides for Astronomer Docker image
   ├── include # other project files
