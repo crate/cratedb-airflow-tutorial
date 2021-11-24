@@ -1,3 +1,4 @@
+"Imports NYC Taxi data from S3 into CrateDB"
 import datetime
 import logging
 

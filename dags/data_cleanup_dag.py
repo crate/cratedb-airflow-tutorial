@@ -1,3 +1,4 @@
+"Implements a retention policy by dropping expired partitions"
 import datetime
 import json
 from airflow import DAG
@@ -42,10 +43,10 @@ with DAG(
         task_id="retrieve_retention_policies",
         python_callable=get_policies,
         op_kwargs={
-            "sql": """ SELECT QUOTE_IDENT(p.table_schema) || '.' || QUOTE_IDENT(p.table_name) as fqn, 
-                        r.partition_column, p.values[r.partition_column] 
-                       FROM information_schema.table_partitions p JOIN doc.retention_policies r ON p.table_schema = r.table_schema 
-                       AND p.table_name = r.table_name 
+            "sql": """ SELECT QUOTE_IDENT(p.table_schema) || '.' || QUOTE_IDENT(p.table_name) as fqn,
+                        r.partition_column, p.values[r.partition_column]
+                       FROM information_schema.table_partitions p JOIN doc.retention_policies r ON p.table_schema = r.table_schema
+                       AND p.table_name = r.table_name
                        AND p.values[r.partition_column] < {date}::TIMESTAMP - r.retention_period;"""
             .format(date="{{ ds }}")
         },

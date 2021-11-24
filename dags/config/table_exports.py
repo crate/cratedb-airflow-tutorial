@@ -1,3 +1,4 @@
+"""Configuration of tables to export in cratedb_table_export DAG"""
 TABLES = [
     {
         "table": "telegraf.metrics",
