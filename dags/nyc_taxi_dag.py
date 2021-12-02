@@ -1,6 +1,8 @@
 """
 Imports NYC Taxi data from S3 into CrateDB
 
+A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-building-a-data-ingestion-pipeline/926
+
 Prerequisites
 -------------
 In the CrateDB schema "nyc_taxi", the tables "load_files_processed",
