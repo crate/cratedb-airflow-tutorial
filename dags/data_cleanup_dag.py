@@ -1,4 +1,8 @@
-"Implements a retention policy by dropping expired partitions"
+"""
+Implements a retention policy by dropping expired partitions
+
+A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913
+"""
 import datetime
 import json
 from airflow import DAG
