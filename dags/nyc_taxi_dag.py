@@ -16,9 +16,9 @@ import logging
 from pathlib import Path
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.hooks.postgres_hook import PostgresHook
-from airflow.operators.http_operator import SimpleHttpOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.operators.python import PythonOperator
 
 
 def get_processed_files(ti):
@@ -109,7 +109,6 @@ with DAG(
     clean_data_urls = PythonOperator(
         task_id="clean_data_urls",
         python_callable=clean_data_urls,
-        provide_context=True,
         op_kwargs={},
     )
 
@@ -118,14 +117,12 @@ with DAG(
     get_processed_files = PythonOperator(
         task_id="get_processed_files",
         python_callable=get_processed_files,
-        provide_context=True,
         op_kwargs={},
     )
 
     identitfy_missing_urls = PythonOperator(
         task_id="identitfy_missing_urls",
         python_callable=identitfy_missing_urls,
-        provide_context=True,
         op_kwargs={},
     )
 
@@ -142,7 +139,6 @@ with DAG(
     process_new_files = PythonOperator(
         task_id="process_new_files",
         python_callable=process_new_files,
-        provide_context=True,
         op_kwargs={},
     )
 

@@ -14,8 +14,8 @@ import logging
 from pathlib import Path
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.hooks.postgres_hook import PostgresHook
-from airflow.operators.python_operator import PythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.operators.python import PythonOperator
 
 
 def get_policies(logical_date):
@@ -80,7 +80,6 @@ with DAG(
     apply_policies = PythonOperator(
         task_id="apply_data_retention_policies",
         python_callable=delete_partitions,
-        provide_context=True,
         op_kwargs={},
     )
 
