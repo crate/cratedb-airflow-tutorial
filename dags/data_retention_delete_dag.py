@@ -2,43 +2,69 @@
 Implements a retention policy by dropping expired partitions
 
 A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913
+
+Prerequisites
+-------------
+In CrateDB, tables for storing retention policies need to be created once manually.
+See the file setup/data_retention_schema.sql in this repository.
 """
 import datetime
 import json
+import logging
+from pathlib import Path
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.operators.python_operator import PythonOperator
 
 
-def get_policies(sql):
+def get_policies(logical_date):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
+    sql = Path('include/data_retention_retrieve_delete_policies.sql') \
+              .read_text().format(date=logical_date)
     records = pg_hook.get_records(sql=sql)
-    retention_policies = json.dumps(records)
-    return retention_policies
+
+    return json.dumps(records)
+
+
+def map_policy(policy):
+    return {
+        "table_fqn": policy[0],
+        "column_name": policy[1],
+        "partition_value": policy[2],
+    }
 
 
 def delete_partitions(ti):
     retention_policies = ti.xcom_pull(task_ids="retrieve_retention_policies")
     policies_obj = json.loads(retention_policies)
+
     for policy in policies_obj:
-        table_name = policy[0]
-        column_name = policy[1]
-        partition_value = policy[2]
+        partition = map_policy(policy)
+
+        logging.info("Deleting partition %s = %s for table %s",
+                     partition["column_name"],
+                     partition["partition_value"],
+                     partition["table_fqn"],
+        )
+
         PostgresOperator(
-            task_id="delete_from_{table}".format(table=str(table_name)),
+            task_id="delete_from_{table}_{partition}_{value}".format(
+                table=partition["table_fqn"],
+                partition=partition["column_name"],
+                value=partition["partition_value"],
+            ),
             postgres_conn_id="cratedb_connection",
-            sql="DELETE FROM %(table)s WHERE %(column)s=%(value)s",
-            parameters={
-                "table": str(table_name),
-                "column": str(column_name),
-                "value": partition_value,
-            },
+            sql=Path('include/data_cleanup_delete.sql').read_text().format(
+                table=partition["table_fqn"],
+                column=partition["column_name"],
+                value=partition["partition_value"],
+            ),
         ).execute(dict())
 
 
 with DAG(
-    dag_id="data-cleanup-dag",
+    dag_id="data-retention-delete-dag",
     start_date=datetime.datetime(2021, 11, 19),
     schedule_interval="@daily",
     catchup=False,
@@ -47,14 +73,10 @@ with DAG(
         task_id="retrieve_retention_policies",
         python_callable=get_policies,
         op_kwargs={
-            "sql": """ SELECT QUOTE_IDENT(p.table_schema) || '.' || QUOTE_IDENT(p.table_name) as fqn,
-                        r.partition_column, p.values[r.partition_column]
-                       FROM information_schema.table_partitions p JOIN doc.retention_policies r ON p.table_schema = r.table_schema
-                       AND p.table_name = r.table_name
-                       AND p.values[r.partition_column] < {date}::TIMESTAMP - r.retention_period;"""
-            .format(date="{{ ds }}")
+            "logical_date": "{{ ds }}",
         },
     )
+
     apply_policies = PythonOperator(
         task_id="apply_data_retention_policies",
         python_callable=delete_partitions,
