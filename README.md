@@ -45,7 +45,8 @@ In the `dags` directory you can find the specification of all DAGs for our examp
 Each DAG is accompanied by a tutorial:
 
 * [table_export_dag.py](dags/table_export_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-automating-data-export-to-s3/901)): performs a daily export of table data to a remote filesystem (in our case S3)
-* [data_cleanup_dag.py](dags/data_cleanup_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913)): implements a retention policy algorithm that drops expired partitions
+* [data_retention_delete_dag.py](dags/data_retention_delete_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913)): implements a retention policy algorithm that drops expired partitions
+* [data_retention_reallocate_dag.py](dags/data_retention_reallocate_dag.py): implements a retention policy algorithm that reallocates expired partitions from hot nodes to cold nodes
 * [nyc_taxi_dag.py](dags/nyc_taxi_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-building-a-data-ingestion-pipeline/926)): imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
 
 ## Start the project
