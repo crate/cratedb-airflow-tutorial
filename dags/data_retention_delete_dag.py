@@ -55,7 +55,7 @@ def delete_partitions(ti):
                 value=partition["partition_value"],
             ),
             postgres_conn_id="cratedb_connection",
-            sql=Path('include/data_cleanup_delete.sql').read_text().format(
+            sql=Path('include/data_retention_delete.sql').read_text().format(
                 table=partition["table_fqn"],
                 column=partition["column_name"],
                 value=partition["partition_value"],
