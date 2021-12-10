@@ -1,3 +1,7 @@
 .git
 .env
 airflow_settings.yaml
+
+*.egg-info
+.eggs
+__pycache__
