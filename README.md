@@ -16,11 +16,15 @@ Before running examples make sure to set up the right environment:
 ### Astronomer
 Astronomer is the managed provider that allows users to easily run and monitor Apache Airflow environments. The best way to initialize and run projects on Astronomer is to use [Astronomer CLI](https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart). To install its latest version on Ubuntu run:
 
-`curl -sSL https://install.astronomer.io | sudo bash`
+```shell
+curl -sSL https://install.astronomer.io | sudo bash
+```
 
 To make sure that Astronomer CLI is installed run:
 
-`astro version`
+```shell
+astro version
+```
 
 For installation of Astronomer CLI on another operating system, please refer to the [official documentation](https://www.astronomer.io/docs/cloud/stable/develop/cli-quickstart).
 
@@ -53,7 +57,9 @@ Each DAG is accompanied by a tutorial:
 
 To start the project on your local machine run:
 
-`astro dev start`
+```shell
+astro dev start
+```
 
 To access the Apache Airflow UI go to `http://localhost:8081`.
 
@@ -63,7 +69,7 @@ From Airflow UI you can further manage running DAGs, check their status, the tim
 
 If your Docker environment has the [BuildKit feature](https://docs.docker.com/develop/develop-images/build_enhancements/) enabled, you may run into an error when starting the Astronomer project:
 
-```
+```shell
 $ astro dev start
 Env file ".env" found. Loading...
 buildkit not supported by daemon
