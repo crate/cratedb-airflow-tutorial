@@ -21,7 +21,7 @@ from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.operators.python import PythonOperator
 
 
-def get_processed_files(ti):
+def get_processed_files(_ti):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_demo_connection")
     records = pg_hook.get_records(sql='SELECT file_name FROM nyc_taxi.load_files_processed')
 
