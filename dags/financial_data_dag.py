@@ -39,7 +39,7 @@ def get_sp500_ticker_symbols():
 def download_YFinance_data_function():
 
     tickers = get_sp500_ticker_symbols()
-    data = yf.download(tickers[:5], start = '2021-11-30')['Adj Close']
+    data = yf.download(tickers[:3], start = {{ ds }})['Adj Close']
     return data.to_json()
 
 def format_insert_function(**kwargs):
