@@ -55,7 +55,6 @@ def process_new_files(ti):
         file_name = missing_url.split('/').pop()
 
         PostgresOperator(
-            dag=dag,
             task_id="copy_{url}".format(url=file_name),
             postgres_conn_id="cratedb_demo_connection",
             sql="""
@@ -69,14 +68,12 @@ def process_new_files(ti):
         ).execute(dict())
 
         PostgresOperator(
-            dag=dag,
             task_id="log_{url}".format(url=file_name),
             postgres_conn_id="cratedb_demo_connection",
             sql=Path('include/taxi-insert.sql').read_text(),
         ).execute(dict())
 
         PostgresOperator(
-            dag=dag,
             task_id="mark_processed_{url}".format(url=file_name),
             postgres_conn_id="cratedb_demo_connection",
             sql="INSERT INTO nyc_taxi.load_files_processed VALUES ('{file}');".format(
@@ -103,7 +100,6 @@ with DAG(
         http_conn_id='http_raw_github',
         endpoint='toddwschneider/nyc-taxi-data/master/setup_files/raw_data_urls.txt',
         headers={},
-        dag=dag
     )
 
     clean_data_urls = PythonOperator(
