@@ -9,7 +9,7 @@ import os
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
-from config.table_exports import TABLES
+from include.table_exports import TABLES
 
 
 with DAG(
