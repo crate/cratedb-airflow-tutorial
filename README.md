@@ -78,6 +78,21 @@ Error: command 'docker build -t astronomer-project_dccf4f/airflow:latest failed:
 
 To overcome this issue, start Astronomer without the BuildKit feature: `DOCKER_BUILDKIT=0 astro dev start` (see the [Astronomer Forum](https://forum.astronomer.io/t/buildkit-not-supported-by-daemon-error-command-docker-build-t-airflow-astro-bcb837-airflow-latest-failed-failed-to-execute-cmd-exit-status-1/857)).
 
+## Code linting
+
+Before opening a pull request, please run [pylint](https://www.pylint.org) and address all reported issues. To install pylint, run:
+
+```shell
+python -m pip install --upgrade -e ".[develop]"
+python -m pip install --upgrade -r requirements.txt
+```
+
+`pylint` can be run via:
+
+```shell
+python -m pylint dags
+```
+
 ## Testing
 
 [Pytest](https://pytest.org/) is used for automated testing of DAGs. To set up test infrastructure locally, run:
