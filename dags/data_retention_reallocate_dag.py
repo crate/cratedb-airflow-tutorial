@@ -19,7 +19,7 @@ from airflow.operators.python import PythonOperator
 def get_policies(logical_date):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path('include/data_retention_retrieve_reallocate_policies.sql') \
-              .read_text().format(date=logical_date)
+              .read_text(encoding="utf-8").format(date=logical_date)
     records = pg_hook.get_records(sql=sql)
 
     return json.dumps(records)
@@ -36,36 +36,31 @@ def reallocate_partition(partition):
 
     # Reallocate the partition
     PostgresOperator(
-        task_id="reallocate_{table}_{partition}_{value}".format(
-            table=partition["table_fqn"],
-            partition=partition["column_name"],
-            value=partition["partition_value"],
-        ),
+        task_id=f"reallocate_{partition['table_fqn']}" \
+                f"_{partition['column_name']}_{partition['partition_value']}",
         postgres_conn_id="cratedb_connection",
-        sql=Path('include/data_retention_reallocate.sql').read_text().format(
+        sql=Path('include/data_retention_reallocate.sql').read_text(encoding="utf-8").format(
             table=partition["table_fqn"],
             column=partition["column_name"],
             value=partition["partition_value"],
             attribute_name=partition["reallocation_attribute_name"],
             attribute_value=partition["reallocation_attribute_value"],
         ),
-    ).execute(dict())
+    ).execute({})
 
     # Update tracking information. As we process partitions in ascending order
     # by the partition value, it is safe to always save the current value.
     PostgresOperator(
-        task_id="reallocate_track_{table}_{partition}_{value}".format(
-            table=partition["table_fqn"],
-            partition=partition["column_name"],
-            value=partition["partition_value"],
-        ),
+        task_id=f"reallocate_track_{partition['table_fqn']}" \
+                f"_{partition['column_name']}_{partition['partition_value']}",
         postgres_conn_id="cratedb_connection",
-        sql=Path('include/data_retention_reallocate_tracking.sql').read_text().format(
-            table=partition["table_name"],
-            schema=partition["schema_name"],
-            partition_value=partition["partition_value"],
-        ),
-    ).execute(dict())
+        sql=Path('include/data_retention_reallocate_tracking.sql') \
+                .read_text(encoding="utf-8") \
+                .format(table=partition["table_name"],
+                        schema=partition["schema_name"],
+                        partition_value=partition["partition_value"],
+                        ),
+    ).execute({})
 
 
 def map_policy(policy):

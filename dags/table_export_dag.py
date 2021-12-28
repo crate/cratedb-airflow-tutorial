@@ -21,7 +21,7 @@ with DAG(
     with TaskGroup(group_id='table_exports') as tg1:
         for export_table in TABLES:
             PostgresOperator(
-                task_id="copy_{table}".format(table=export_table['table']),
+                task_id=f"copy_{export_table['table']}",
                 postgres_conn_id="cratedb_connection",
                 sql="""
                         COPY {table} WHERE DATE_TRUNC('day', {timestamp_column}) = '{day}'

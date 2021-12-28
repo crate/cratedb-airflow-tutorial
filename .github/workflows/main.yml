@@ -23,12 +23,12 @@ jobs:
           python -m pip install --upgrade -e ".[develop]"
           python -m pip install --upgrade -r requirements.txt
 
-      - name: Run pytest
+      - name: Run pylint
         run: |
           python -m pylint dags
 
   test:
-    name: Run tests
+    name: Run pytest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
