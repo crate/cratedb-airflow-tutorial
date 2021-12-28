@@ -21,7 +21,7 @@ from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.operators.python import PythonOperator
 
 
-def get_processed_files(ti):
+def get_processed_files(_ti):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_demo_connection")
     records = pg_hook.get_records(sql='SELECT file_name FROM nyc_taxi.load_files_processed')
 
@@ -55,37 +55,33 @@ def process_new_files(ti):
         file_name = missing_url.split('/').pop()
 
         PostgresOperator(
-            task_id="copy_{url}".format(url=file_name),
+            task_id=f"copy_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
-            sql="""
+            sql=f"""
                     COPY nyc_taxi.load_trips_staging
-                    FROM '{url}'
+                    FROM '{missing_url}'
                     WITH (format = 'csv', empty_string_as_null = true)
                     RETURN SUMMARY;
-                """.format(
-                url=missing_url
-                )
-        ).execute(dict())
+                """
+        ).execute({})
 
         PostgresOperator(
-            task_id="log_{url}".format(url=file_name),
+            task_id=f"log_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
-            sql=Path('include/taxi-insert.sql').read_text(),
-        ).execute(dict())
+            sql=Path('include/taxi-insert.sql').read_text(encoding="utf-8"),
+        ).execute({})
 
         PostgresOperator(
-            task_id="mark_processed_{url}".format(url=file_name),
+            task_id=f"mark_processed_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
-            sql="INSERT INTO nyc_taxi.load_files_processed VALUES ('{file}');".format(
-                file=missing_url
-                )
-        ).execute(dict())
+            sql=f"INSERT INTO nyc_taxi.load_files_processed VALUES ('{missing_url}');",
+        ).execute({})
 
         PostgresOperator(
-            task_id="purge_staging_{url}".format(url=file_name),
+            task_id=f"purge_staging_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
             sql="DELETE FROM nyc_taxi.load_trips_staging;"
-        ).execute(dict())
+        ).execute({})
 
 
 with DAG(
