@@ -24,7 +24,7 @@ with DAG(
     end = DummyOperator(task_id='end')
     with TaskGroup(group_id='table_exports') as tg1:
         for export_table in TABLES:
-            export_to_s3 = PostgresOperator(
+            PostgresOperator(
                 task_id=f"copy_{export_table['table']}",
                 postgres_conn_id="cratedb_connection",
                 sql="""
