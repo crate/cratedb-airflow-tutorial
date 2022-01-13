@@ -52,6 +52,7 @@ Each DAG is accompanied by a tutorial:
 * [data_retention_delete_dag.py](dags/data_retention_delete_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913)): implements a retention policy algorithm that drops expired partitions
 * [data_retention_reallocate_dag.py](dags/data_retention_reallocate_dag.py): implements a retention policy algorithm that reallocates expired partitions from hot nodes to cold nodes
 * [nyc_taxi_dag.py](dags/nyc_taxi_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-building-a-data-ingestion-pipeline/926)): imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
+* [financial_data_dag.py](dags/financial_data_dag.py): downloads financial data from S&P 500 companies and stores them into CrateDB
 
 ## Start the project
 
