@@ -1,0 +1,3 @@
+[submodule "crate-airflow-tutorial"]
+	path = crate-airflow-tutorial
+	url = https://github.com/rafaelasantana/crate-airflow-tutorial.git
