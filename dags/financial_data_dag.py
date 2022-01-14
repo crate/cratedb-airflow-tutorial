@@ -38,7 +38,7 @@ def get_sp500_ticker_symbols():
     tickers = []
 
     # extracting the tickers from the data
-    for row in range(len(data_rows)):
+    for row, _ in enumerate(data_rows):
         stock = list(filter(None,data_rows[row].text.split("\n")))
         symbol = stock[0]
 
@@ -70,10 +70,10 @@ def prepare_data_function(ti):
 
     values_dict = []
 
-    for col in range(len(df.columns)):
+    for col, _ in enumerate(df.columns):
         closing_date = df.columns[col]
 
-        for row in range(len(df.index)):
+        for row, _ in enumerate(df.index):
             ticker = df.index[row]
             adj_close = df.iloc[row, col]
 
@@ -81,6 +81,7 @@ def prepare_data_function(ti):
                 values_dict.append(
                     {'closing_date': closing_date, 'ticker': ticker, 'adj_close': adj_close}
                 )
+
     return values_dict
 
 def format_and_insert_data_function(ti):
@@ -90,7 +91,7 @@ def format_and_insert_data_function(ti):
     insert_stmt = "INSERT INTO sp500 (closing_date, ticker, adjusted_close) VALUES "
     formatted_values = []
 
-    for index in range(len(values_dict)):
+    for index, _ in enumerate(values_dict):
         values = values_dict[index]
         formatted_values.append(
             f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
