@@ -47,8 +47,6 @@ def get_sp500_ticker_symbols():
 
         tickers.append(symbol)
 
-    tickers.sort()
-
     return tickers
 
 def download_yfinance_data_function(start_date):
@@ -59,7 +57,7 @@ def download_yfinance_data_function(start_date):
     return data.to_json()
 
 def prepare_data_function(ti):
-    """creates an array of formatted and clean data values"""
+    """creates a list of dictionaries with clean data values"""
 
     # pulling data (as string)
     string_data = ti.xcom_pull(task_ids='download_data_task')
@@ -70,7 +68,7 @@ def prepare_data_function(ti):
     # transforming to dataframe for easier manipulation
     df = pd.DataFrame.from_dict(json_data, orient='index')
 
-    values_array = []
+    values_dict = []
 
     for col in range(len(df.columns)):
         closing_date = df.columns[col]
@@ -80,18 +78,25 @@ def prepare_data_function(ti):
             adj_close = df.iloc[row, col]
 
             if not(adj_close is None or math.isnan(adj_close)):
-                values_array.append(f"({closing_date}, '{ticker}', {adj_close}")
-                #values_array.append("({},\'{}\',{})".format(closing_date, ticker, adj_close))
+                values_dict.append(
+                    {'closing_date': closing_date, 'ticker': ticker, 'adj_close': adj_close}
+                )
+    return values_dict
 
-    return values_array
+def format_and_insert_data_function(ti):
+    """formats values to SQL standards and inserts financial data values into CrateDB"""
 
-def insert_data_function(ti):
-    """inserts financial data values into CrateDB"""
-
-    values_array = ti.xcom_pull(task_ids='prepare_data_task')
-
+    values_dict = ti.xcom_pull(task_ids='prepare_data_task')
     insert_stmt = "INSERT INTO sp500 (closing_date, ticker, adjusted_close) VALUES "
-    insert_stmt += ", ".join(values_array) + ";"
+    formatted_values = []
+
+    for index in range(len(values_dict)):
+        values = values_dict[index]
+        formatted_values.append(
+            f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
+        )
+
+    insert_stmt += ", ".join(formatted_values) + ";"
 
     insert_data_task = PostgresOperator(
                 task_id="insert_data_task",
@@ -123,10 +128,10 @@ with DAG(
                                     op_kwargs={},
                                     execution_timeout=datetime.timedelta(minutes=3))
 
-    insert_data_task = PythonOperator(task_id='insert_data_task',
-                                    python_callable=insert_data_function,
+    format_and_insert_data_task = PythonOperator(task_id='format_and_insert_data_task',
+                                    python_callable=format_and_insert_data_function,
                                     provide_context=True,
                                     op_kwargs={},
                                     execution_timeout=datetime.timedelta(minutes=3))
 
-download_data_task >> prepare_data_task >> insert_data_task
+download_data_task >> prepare_data_task >> format_and_insert_data_task
