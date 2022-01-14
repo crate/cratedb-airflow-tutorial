@@ -17,8 +17,7 @@ import pandas as pd
 
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.operators.python_operator import PythonOperator
-
+from airflow.operators.python import PythonOperator
 
 def get_sp500_ticker_symbols():
     """Extracts SP500 companies' tickers from the SP500's wikipedia page"""
@@ -118,7 +117,6 @@ with DAG(
 
     download_data_task = PythonOperator(task_id='download_data_task',
                                     python_callable=download_yfinance_data_function,
-                                    provide_context=True,
                                     op_kwargs={
                                         "start_date": "{{ ds }}",
                                     },
@@ -126,13 +124,11 @@ with DAG(
 
     prepare_data_task = PythonOperator(task_id='prepare_data_task',
                                     python_callable=prepare_data_function,
-                                    provide_context=True,
                                     op_kwargs={},
                                     execution_timeout=datetime.timedelta(minutes=3))
 
     format_and_insert_data_task = PythonOperator(task_id='format_and_insert_data_task',
                                     python_callable=format_and_insert_data_function,
-                                    provide_context=True,
                                     op_kwargs={},
                                     execution_timeout=datetime.timedelta(minutes=3))
 
