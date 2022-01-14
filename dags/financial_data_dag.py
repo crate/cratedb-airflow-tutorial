@@ -22,6 +22,7 @@ from airflow.operators.python_operator import PythonOperator
 
 def get_sp500_ticker_symbols():
     """Extracts SP500 companies' tickers from the SP500's wikipedia page"""
+
     # getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
     r_html = requests.get(url,timeout=2.5).text
@@ -105,7 +106,7 @@ def format_and_insert_data_function(ti):
                 sql=insert_stmt
                 )
 
-    insert_data_task.execute(dict())
+    insert_data_task.execute({})
 
 
 with DAG(
