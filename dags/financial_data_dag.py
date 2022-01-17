@@ -70,11 +70,9 @@ def prepare_data_function(ti):
 
     values_dict = []
 
-    for col, _ in enumerate(df.columns):
-        closing_date = df.columns[col]
+    for col, closing_date in enumerate(df.columns):
 
-        for row, _ in enumerate(df.index):
-            ticker = df.index[row]
+        for row, ticker in enumerate(df.index):
             adj_close = df.iloc[row, col]
 
             if not(adj_close is None or math.isnan(adj_close)):
