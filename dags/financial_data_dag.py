@@ -89,8 +89,7 @@ def format_and_insert_data_function(ti):
     insert_stmt = "INSERT INTO sp500 (closing_date, ticker, adjusted_close) VALUES "
     formatted_values = []
 
-    for index, _ in enumerate(values_dict):
-        values = values_dict[index]
+    for values in values_dict:
         formatted_values.append(
             f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
         )
