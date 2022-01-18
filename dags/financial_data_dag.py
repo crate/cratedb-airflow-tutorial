@@ -22,32 +22,33 @@ from airflow.operators.python import PythonOperator
 def get_sp500_ticker_symbols():
     """Extracts SP500 companies' tickers from the SP500's wikipedia page"""
 
-    # getting the html code from S&P 500 wikipedia page
+    # Getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
     r_html = requests.get(url,timeout=2.5).text
     soup = BeautifulSoup(r_html, 'html.parser')
-    components_table = soup.find_all(id="constituents")
 
-    # the first section (index=0) in the components table contains
-    # the headers (which are unimportant in this context) therefore,
-    # only data from index=1 on is taken. moreover, each row in the
-    # table is stored in a <tr> division, so we find all of those.
-    # The data is stored in an array, where each element contains
-    # information about a S&P 500 company.
-    data_rows = components_table[0].find("tbody").find_all("tr")[1:]
+    # The stock tickers are found in a table in the wikipedia page,
+    # whose html "id" attribute is "constituents". Here, the html
+    # soup is filtered to get the  table contents
+    table_content = soup.find(id="constituents")
+
+    # The stocks' data is stored in a 'tbody' division in the table,
+    # so we use it to filter the table content.
+    # Each stock's information is stored in a 'tr' division,
+    # so we use this as a filter to generate a list of stock data.
+    # The first section (index=0) in the generaed list contains
+    # the headers (which are unimportant in this context), therefore,
+    # only data from index=1 on is taken.
+    stocks_data = table_content.find("tbody").find_all("tr")[1:]
     tickers = []
 
-    # extracting the tickers from the data
-    for row, _ in enumerate(data_rows):
-        stock = list(filter(None,data_rows[row].text.split("\n")))
-        symbol = stock[0]
-
-        if symbol.find('.') != -1:
-            symbol = symbol.replace('.', '-')
-
-        tickers.append(symbol)
+    # extracting the tickers from each stock's data
+    for stock in stocks_data:
+        ticker = stock.text.split("\n")[1]
+        tickers.append(ticker)
 
     return tickers
+
 
 def download_yfinance_data_function(start_date):
     """downloads Adjusted Close data from SP500 companies"""
