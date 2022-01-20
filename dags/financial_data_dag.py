@@ -10,6 +10,7 @@ See the file setup/financial_data_schema.sql in this repository.
 import datetime
 import math
 import json
+import logging
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
@@ -82,6 +83,9 @@ def prepare_data_function(ti):
                 values_dict.append(
                     {'closing_date': closing_date, 'ticker': ticker, 'adj_close': adj_close}
                 )
+            else:
+                logging.info("Skipping %s for %s, invalid adj_close (%s)",
+                             ticker, closing_date, adj_close)
 
     return values_dict
 
