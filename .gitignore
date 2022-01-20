@@ -2,6 +2,7 @@
 .env
 airflow_settings.yaml
 
+env
 *.egg-info
 .eggs
 __pycache__
