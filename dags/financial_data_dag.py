@@ -45,6 +45,8 @@ def get_sp500_ticker_symbols():
     # extracting the tickers from each stock's data
     for stock in stocks_data:
         ticker = stock.text.split("\n")[1]
+        # some tickers have a dot in their name on Wikipedia, but a dash in YFinance
+        ticker = ticker.replace('.', '-')
         tickers.append(ticker)
 
     return tickers
