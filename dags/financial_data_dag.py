@@ -93,15 +93,17 @@ def format_and_insert_data_function(ti):
     """formats values to SQL standards and inserts financial data values into CrateDB"""
 
     values_dict = ti.xcom_pull(task_ids='prepare_data_task')
-    insert_stmt = "INSERT INTO sp500 (closing_date, ticker, adjusted_close) VALUES "
     formatted_values = []
-
     for values in values_dict:
         formatted_values.append(
             f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
         )
 
-    insert_stmt += ", ".join(formatted_values) + ";"
+    insert_stmt = f"""
+        INSERT INTO sp500 (closing_date, ticker, adjusted_close)
+        VALUES {", ".join(formatted_values)}
+        ON CONFLICT (closing_date, ticker) DO UPDATE SET adjusted_close = excluded.adjusted_close
+        """
 
     insert_data_task = PostgresOperator(
                 task_id="insert_data_task",
