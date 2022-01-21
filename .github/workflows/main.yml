@@ -25,7 +25,7 @@ jobs:
 
       - name: Run pylint
         run: |
-          python -m pylint dags
+          python -m pylint dags tests
 
   test:
     name: Run pytest

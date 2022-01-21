@@ -1,4 +1,4 @@
-import sys
+"Global DAG import test to identify syntax or dependency issues"
 from airflow.models import DagBag
 
 # Verifies that all DAGs can be loaded successfully
