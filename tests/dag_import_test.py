@@ -1,8 +1,5 @@
-import sys
+"Global DAG import test to identify syntax or dependency issues"
 from airflow.models import DagBag
-
-# ensure dags/config gets loaded
-sys.path.insert(0, 'dags')
 
 # Verifies that all DAGs can be loaded successfully
 def test_no_import_errors():

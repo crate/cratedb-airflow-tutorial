@@ -10,6 +10,7 @@ See the file setup/financial_data_schema.sql in this repository.
 import datetime
 import math
 import json
+import logging
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
@@ -32,22 +33,17 @@ def get_sp500_ticker_symbols():
     # soup is filtered to get the  table contents
     table_content = soup.find(id="constituents")
 
-    # The stocks' data is stored in a 'tbody' division in the table,
-    # so we use it to filter the table content.
     # Each stock's information is stored in a 'tr' division,
     # so we use this as a filter to generate a list of stock data.
-    # The first section (index=0) in the generaed list contains
+    # The first section (index=0) in the generated list contains
     # the headers (which are unimportant in this context), therefore,
     # only data from index=1 on is taken.
-    stocks_data = table_content.find("tbody").find_all("tr")[1:]
-    tickers = []
-
-    # extracting the tickers from each stock's data
-    for stock in stocks_data:
-        ticker = stock.text.split("\n")[1]
-        tickers.append(ticker)
-
-    return tickers
+    # For mapping, we find the ticker in the first 'td' division of
+    # each stock and replace, when given, a '.' (wikipedia notation)
+    # with a '-' (yfinance notation).
+    # Finally, the map is returned as a list.
+    return list(map(lambda stock: stock.find('td').text.strip().replace('.', '-'),
+                    table_content.find_all('tr')[1:]))
 
 
 def download_yfinance_data_function(start_date):
@@ -80,6 +76,9 @@ def prepare_data_function(ti):
                 values_dict.append(
                     {'closing_date': closing_date, 'ticker': ticker, 'adj_close': adj_close}
                 )
+            else:
+                logging.info("Skipping %s for %s, invalid adj_close (%s)",
+                             ticker, closing_date, adj_close)
 
     return values_dict
 
@@ -87,15 +86,17 @@ def format_and_insert_data_function(ti):
     """formats values to SQL standards and inserts financial data values into CrateDB"""
 
     values_dict = ti.xcom_pull(task_ids='prepare_data_task')
-    insert_stmt = "INSERT INTO sp500 (closing_date, ticker, adjusted_close) VALUES "
     formatted_values = []
-
     for values in values_dict:
         formatted_values.append(
             f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
         )
 
-    insert_stmt += ", ".join(formatted_values) + ";"
+    insert_stmt = f"""
+        INSERT INTO sp500 (closing_date, ticker, adjusted_close)
+        VALUES {", ".join(formatted_values)}
+        ON CONFLICT (closing_date, ticker) DO UPDATE SET adjusted_close = excluded.adjusted_close
+        """
 
     insert_data_task = PostgresOperator(
                 task_id="insert_data_task",

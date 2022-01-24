@@ -21,7 +21,7 @@ from airflow.operators.python import PythonOperator
 def get_policies(logical_date):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path('include/data_retention_retrieve_delete_policies.sql') \
-              .read_text().format(date=logical_date)
+              .read_text(encoding="utf-8").format(date=logical_date)
     records = pg_hook.get_records(sql=sql)
 
     return json.dumps(records)
@@ -49,18 +49,15 @@ def delete_partitions(ti):
         )
 
         PostgresOperator(
-            task_id="delete_from_{table}_{partition}_{value}".format(
-                table=partition["table_fqn"],
-                partition=partition["column_name"],
-                value=partition["partition_value"],
-            ),
+            task_id=f"delete_from_{partition['table_fqn']}" \
+                    f"_{partition['column_name']}_{partition['partition_value']}",
             postgres_conn_id="cratedb_connection",
-            sql=Path('include/data_retention_delete.sql').read_text().format(
+            sql=Path('include/data_retention_delete.sql').read_text(encoding="utf-8").format(
                 table=partition["table_fqn"],
                 column=partition["column_name"],
                 value=partition["partition_value"],
             ),
-        ).execute(dict())
+        ).execute({})
 
 
 with DAG(

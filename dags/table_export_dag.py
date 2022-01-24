@@ -9,7 +9,9 @@ import os
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
-from config.table_exports import TABLES
+from airflow.operators.dummy import DummyOperator
+from airflow.models.baseoperator import chain
+from include.table_exports import TABLES
 
 
 with DAG(
@@ -18,10 +20,12 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
+    start = DummyOperator(task_id='start')
+    end = DummyOperator(task_id='end')
     with TaskGroup(group_id='table_exports') as tg1:
         for export_table in TABLES:
             PostgresOperator(
-                task_id="copy_{table}".format(table=export_table['table']),
+                task_id=f"copy_{export_table['table']}",
                 postgres_conn_id="cratedb_connection",
                 sql="""
                         COPY {table} WHERE DATE_TRUNC('day', {timestamp_column}) = '{day}'
@@ -35,3 +39,4 @@ with DAG(
                     secret=os.environ.get("SECRET_ACCESS_KEY")
                 )
             )
+    chain(start, tg1, end)
