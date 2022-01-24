@@ -33,24 +33,17 @@ def get_sp500_ticker_symbols():
     # soup is filtered to get the  table contents
     table_content = soup.find(id="constituents")
 
-    # The stocks' data is stored in a 'tbody' division in the table,
-    # so we use it to filter the table content.
     # Each stock's information is stored in a 'tr' division,
     # so we use this as a filter to generate a list of stock data.
-    # The first section (index=0) in the generaed list contains
+    # The first section (index=0) in the generated list contains
     # the headers (which are unimportant in this context), therefore,
     # only data from index=1 on is taken.
-    stocks_data = table_content.find("tbody").find_all("tr")[1:]
-    tickers = []
-
-    # extracting the tickers from each stock's data
-    for stock in stocks_data:
-        ticker = stock.text.split("\n")[1]
-        # some tickers have a dot in their name on Wikipedia, but a dash in YFinance
-        ticker = ticker.replace('.', '-')
-        tickers.append(ticker)
-
-    return tickers
+    # For mapping, we find the ticker in the first 'td' division of
+    # each stock and replace, when given, a '.' (wikipedia notation)
+    # with a '-' (yfinance notation).
+    # Finally, the map is returned as a list.
+    return list(map(lambda stock: stock.find('td').text.strip().replace('.', '-'),
+                    table_content.find_all('tr')[1:]))
 
 
 def download_yfinance_data_function(start_date):
