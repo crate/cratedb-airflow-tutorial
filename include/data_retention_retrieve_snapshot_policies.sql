@@ -1,19 +1,12 @@
-SELECT QUOTE_IDENT(p.table_schema),
-       QUOTE_IDENT(p.table_name),
+-- intentionally not adding QUOTE_IDENT to the first two columns, as they are used in an already quoted string later on
+SELECT p.table_schema,
+       p.table_name,
        QUOTE_IDENT(p.table_schema) || '.' || QUOTE_IDENT(p.table_name),
        QUOTE_IDENT(r.partition_column),
        TRY_CAST(p.values[r.partition_column] AS BIGINT),
-       reallocation_attribute_name,
-       reallocation_attribute_value
+       target_repository_name
 FROM information_schema.table_partitions p
 JOIN doc.retention_policies r ON p.table_schema = r.table_schema
   AND p.table_name = r.table_name
   AND p.values[r.partition_column] < '{date}'::TIMESTAMP - (r.retention_period || ' days')::INTERVAL
-LEFT JOIN doc.retention_policy_tracking t ON t.table_schema = p.table_schema
-  AND t.table_name = p.table_name
-WHERE r.strategy = 'reallocate'
-  AND (
-    t.last_partition_value IS NULL
-    OR p.values[r.partition_column] > t.last_partition_value
-  )
-ORDER BY 5 ASC;
+WHERE r.strategy = 'snapshot';

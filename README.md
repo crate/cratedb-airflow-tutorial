@@ -50,9 +50,10 @@ Each DAG is accompanied by a tutorial:
 
 * [table_export_dag.py](dags/table_export_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-automating-data-export-to-s3/901)): performs a daily export of table data to a remote filesystem (in our case S3)
 * [data_retention_delete_dag.py](dags/data_retention_delete_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-implementation-of-data-retention-policy/913)): implements a retention policy algorithm that drops expired partitions
-* [data_retention_reallocate_dag.py](dags/data_retention_reallocate_dag.py): implements a retention policy algorithm that reallocates expired partitions from hot nodes to cold nodes
+* [data_retention_reallocate_dag.py](dags/data_retention_reallocate_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-building-a-hot-cold-storage-data-retention-policy/934)): implements a retention policy algorithm that reallocates expired partitions from hot nodes to cold nodes
+* [data_retention_snapshot_dag.py](dags/data_retention_snapshot_dag.py): implements a retention policy algorithm that snapshots expired partitions to a repository
 * [nyc_taxi_dag.py](dags/nyc_taxi_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-building-a-data-ingestion-pipeline/926)): imports [NYC Taxi data](https://github.com/toddwschneider/nyc-taxi-data) from AWS S3 into CrateDB
-* [financial_data_dag.py](dags/financial_data_dag.py): downloads financial data from S&P 500 companies and stores them into CrateDB
+* [financial_data_dag.py](dags/financial_data_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-automating-stock-data-collection-and-storage/990)): downloads financial data from S&P 500 companies and stores them into CrateDB
 
 ## Start the project
 
