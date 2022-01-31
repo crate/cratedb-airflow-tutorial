@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS doc.retention_policies (
    "retention_period" INTEGER NOT NULL,
    "reallocation_attribute_name" TEXT,
    "reallocation_attribute_value" TEXT,
+   "target_repository_name" TEXT,
    "strategy" TEXT NOT NULL,
    PRIMARY KEY ("table_schema", "table_name", "strategy")
 )
