@@ -5,15 +5,15 @@ setup(
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
-        "apache-airflow==2.2.3",
-        "apache-airflow-providers-postgres==2.4.0",
+        "apache-airflow==2.2.4",
+        "apache-airflow-providers-postgres==3.0.0",
     ],
     extras_require={
         "develop": [
             "pylint==2.12.2",
         ],
         "testing": [
-            "pytest==6.2.5",
+            "pytest==7.0.1",
         ],
     },
 )
