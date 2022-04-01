@@ -3,9 +3,8 @@ Regularly exports a table's rows to an S3 bucket as JSON files
 
 A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-automating-data-export-to-s3/901
 """
-import datetime
 import os
-
+import pendulum
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
@@ -16,7 +15,7 @@ from include.table_exports import TABLES
 
 with DAG(
     dag_id="cratedb_table_export",
-    start_date=datetime.datetime(2021, 11, 11),
+    start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
 ) as dag:

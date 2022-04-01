@@ -11,6 +11,7 @@ import datetime
 import math
 import json
 import logging
+import pendulum
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
@@ -109,7 +110,7 @@ def format_and_insert_data_function(ti):
 
 with DAG(
     dag_id="financial_data_dag",
-    start_date=datetime.datetime(2022, 1, 10),
+    start_date=pendulum.datetime(2022, 1, 10, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
