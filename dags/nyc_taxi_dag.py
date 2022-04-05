@@ -10,10 +10,9 @@ In the CrateDB schema "nyc_taxi", the tables "load_files_processed",
 You can retrieve the CREATE TABLE statements from the file setup/taxi-schema.sql
 in this repository.
 """
-import datetime
 import logging
-
 from pathlib import Path
+import pendulum
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -86,7 +85,7 @@ def process_new_files(ti):
 
 with DAG(
     dag_id="nyc-taxi",
-    start_date=datetime.datetime(2021, 11, 11),
+    start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
 ) as dag:

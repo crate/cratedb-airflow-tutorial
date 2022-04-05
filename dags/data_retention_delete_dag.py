@@ -8,10 +8,10 @@ Prerequisites
 In CrateDB, tables for storing retention policies need to be created once manually.
 See the file setup/data_retention_schema.sql in this repository.
 """
-import datetime
 import json
 import logging
 from pathlib import Path
+import pendulum
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -62,7 +62,7 @@ def delete_partitions(ti):
 
 with DAG(
     dag_id="data-retention-delete-dag",
-    start_date=datetime.datetime(2021, 11, 19),
+    start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
