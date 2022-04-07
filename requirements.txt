@@ -1,7 +1,4 @@
 beautifulsoup4==4.10.0
-# Restrict pandas version to align with the requirements of some Airflow provider packages.
-# Currently apache-airflow-providers-google and apache-airflow-providers-amazon, which we
-# both don't use, but they are bundled with Airflow by default.
-pandas<1.4,>=0.17.1
+apache-airflow[pandas]
 requests==2.27.1
 yfinance==0.1.70
