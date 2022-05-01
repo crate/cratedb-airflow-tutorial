@@ -13,7 +13,7 @@ setup(
             "pylint==2.13.4",
         ],
         "testing": [
-            "pytest==7.1.1",
+            "pytest==7.1.2",
         ],
     },
 )
