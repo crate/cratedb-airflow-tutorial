@@ -8,7 +8,7 @@ import pendulum
 from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.models.baseoperator import chain
 from include.table_exports import TABLES
 
@@ -19,8 +19,8 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
-    start = DummyOperator(task_id='start')
-    end = DummyOperator(task_id='end')
+    start = EmptyOperator(task_id='start')
+    end = EmptyOperator(task_id='end')
     with TaskGroup(group_id='table_exports') as tg1:
         for export_table in TABLES:
             PostgresOperator(
