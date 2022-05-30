@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name="crate-airflow-tutorial",
     packages=find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
-        "apache-airflow==2.3.0",
+        "apache-airflow==2.3.1",
         "apache-airflow-providers-postgres==4.1.0",
     ],
     extras_require={
