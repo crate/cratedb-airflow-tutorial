@@ -34,18 +34,16 @@ The project directory has the following file structure:
 
 ```
   ├── dags # directory containing all DAGs
-  │   ├── config # configuration files used to parameterize DAGs
   ├── include # additional files which are used in DAGs
   ├── .astro # project settings
   ├── Dockerfile # runtime overrides for Astronomer Docker image
-  ├── include # other project files
   ├── packages.txt # specification of OS-level packages
   ├── plugins # custom or community Airflow plugins
   ├── setup # additional setup-related scripts/database schemas
   └── requirements.txt # specification of Python packages
 ```
 
-In the `dags` directory you can find the specification of all DAGs for our examples.
+In the [dags](dags) directory you can find the specification of all DAGs for our examples.
 Each DAG is accompanied by a tutorial:
 
 * [table_export_dag.py](dags/table_export_dag.py) ([tutorial](https://community.crate.io/t/cratedb-and-apache-airflow-automating-data-export-to-s3/901)): performs a daily export of table data to a remote filesystem (in our case S3)
