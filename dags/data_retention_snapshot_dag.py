@@ -18,9 +18,8 @@ from airflow.decorators import dag, task
 @task
 def get_policies(ds=None):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
-    sql = Path('include/data_retention_retrieve_snapshot_policies.sql') \
-            .read_text(encoding="utf-8").format(date=ds)
-    return pg_hook.get_records(sql=sql)
+    sql = Path('include/data_retention_retrieve_snapshot_policies.sql')
+    return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
 
 # Generate DROP statment for a given partition
 @task

@@ -27,9 +27,8 @@ def generate_sql(policy):
 @task
 def get_policies(ds=None):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
-    sql = Path('include/data_retention_retrieve_delete_policies.sql') \
-            .read_text(encoding="utf-8").format(date=ds)
-    return pg_hook.get_records(sql=sql)
+    sql = Path('include/data_retention_retrieve_delete_policies.sql')
+    return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
