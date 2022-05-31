@@ -5,7 +5,6 @@ Prerequisites
 -------------
 In CrateDB, the schema to store this data needs to be created once manually.
 See the file setup/financial_data_schema.sql in this repository.
-
 """
 import datetime
 import math
@@ -16,13 +15,11 @@ import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 import pandas as pd
-
-from airflow import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.operators.python import PythonOperator
+from airflow.decorators import dag, task
 
 def get_sp500_ticker_symbols():
-    """Extracts SP500 companies' tickers from the SP500's wikipedia page"""
+    "Extracts S&P 500 companies' tickers from the S&P 500's wikipedia page"
 
     # Getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -46,30 +43,23 @@ def get_sp500_ticker_symbols():
     return list(map(lambda stock: stock.find('td').text.strip().replace('.', '-'),
                     table_content.find_all('tr')[1:]))
 
-
-def download_yfinance_data_function(start_date):
-    """downloads Adjusted Close data from SP500 companies"""
+@task(execution_timeout=datetime.timedelta(minutes=3))
+def download_yfinance_data(ds=None):
+    "downloads Adjusted Close data from S&P 500 companies"
 
     tickers = get_sp500_ticker_symbols()
-    data = yf.download(tickers, start=start_date)['Adj Close']
+    data = yf.download(tickers, start=ds)['Adj Close']
     return data.to_json()
 
-def prepare_data_function(ti):
-    """creates a list of dictionaries with clean data values"""
-
-    # pulling data (as string)
-    string_data = ti.xcom_pull(task_ids='download_data_task')
-
-    # transforming to json
-    json_data = json.loads(string_data)
+@task(execution_timeout=datetime.timedelta(minutes=3))
+def prepare_data(string_data):
+    "creates a list of dictionaries with clean data values"
 
     # transforming to dataframe for easier manipulation
-    df = pd.DataFrame.from_dict(json_data, orient='index')
+    df = pd.DataFrame.from_dict(json.loads(string_data), orient='index')
 
     values_dict = []
-
     for col, closing_date in enumerate(df.columns):
-
         for row, ticker in enumerate(df.index):
             adj_close = df.iloc[row, col]
 
@@ -83,53 +73,25 @@ def prepare_data_function(ti):
 
     return values_dict
 
-def format_and_insert_data_function(ti):
-    """formats values to SQL standards and inserts financial data values into CrateDB"""
 
-    values_dict = ti.xcom_pull(task_ids='prepare_data_task')
-    formatted_values = []
-    for values in values_dict:
-        formatted_values.append(
-            f"({values['closing_date']}, '{values['ticker']}', {values['adj_close']})"
-        )
-
-    insert_stmt = f"""
-        INSERT INTO sp500 (closing_date, ticker, adjusted_close)
-        VALUES {", ".join(formatted_values)}
-        ON CONFLICT (closing_date, ticker) DO UPDATE SET adjusted_close = excluded.adjusted_close
-        """
-
-    insert_data_task = PostgresOperator(
-                task_id="insert_data_task",
-                postgres_conn_id="cratedb_connection",
-                sql=insert_stmt
-                )
-
-    insert_data_task.execute({})
-
-
-with DAG(
-    dag_id="financial_data_dag",
+@dag(
     start_date=pendulum.datetime(2022, 1, 10, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
-) as dag:
+)
+def financial_data_import():
+    yfinance_data = download_yfinance_data()
 
-    download_data_task = PythonOperator(task_id='download_data_task',
-                                    python_callable=download_yfinance_data_function,
-                                    op_kwargs={
-                                        "start_date": "{{ ds }}",
-                                    },
-                                    execution_timeout=datetime.timedelta(minutes=3))
+    prepared_data = prepare_data(yfinance_data)
 
-    prepare_data_task = PythonOperator(task_id='prepare_data_task',
-                                    python_callable=prepare_data_function,
-                                    op_kwargs={},
-                                    execution_timeout=datetime.timedelta(minutes=3))
+    PostgresOperator.partial(
+        task_id="insert_data_task",
+        postgres_conn_id="cratedb_connection",
+        sql="""
+            INSERT INTO doc.sp500 (closing_date, ticker, adjusted_close)
+            VALUES (%(closing_date)s, %(ticker)s, %(adj_close)s)
+            ON CONFLICT (closing_date, ticker) DO UPDATE SET adjusted_close = excluded.adjusted_close
+            """,
+    ).expand(parameters=prepared_data)
 
-    format_and_insert_data_task = PythonOperator(task_id='format_and_insert_data_task',
-                                    python_callable=format_and_insert_data_function,
-                                    op_kwargs={},
-                                    execution_timeout=datetime.timedelta(minutes=3))
-
-download_data_task >> prepare_data_task >> format_and_insert_data_task
+financial_data_dag = financial_data_import()
