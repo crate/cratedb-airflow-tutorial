@@ -5,7 +5,7 @@ A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apa
 """
 import os
 import pendulum
-from airflow import DAG
+from airflow.decorators import dag
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
@@ -13,12 +13,12 @@ from airflow.models.baseoperator import chain
 from include.table_exports import TABLES
 
 
-with DAG(
-    dag_id="cratedb_table_export",
+@dag(
     start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
-) as dag:
+)
+def table_export():
     start = EmptyOperator(task_id='start')
     end = EmptyOperator(task_id='end')
     with TaskGroup(group_id='table_exports') as tg1:
@@ -27,15 +27,17 @@ with DAG(
                 task_id=f"copy_{export_table['table']}",
                 postgres_conn_id="cratedb_connection",
                 sql="""
-                        COPY {table} WHERE DATE_TRUNC('day', {timestamp_column}) = '{day}'
-                        TO DIRECTORY 's3://{access}:{secret}@{target_bucket}-{day}';
-                    """.format(
-                    table=export_table['table'],
-                    timestamp_column=export_table['timestamp_column'],
-                    target_bucket=export_table['target_bucket'],
-                    day='{{ macros.ds_add(ds, -1) }}',
-                    access=os.environ.get("ACCESS_KEY_ID"),
-                    secret=os.environ.get("SECRET_ACCESS_KEY")
-                )
+                        COPY {{params.table}} WHERE DATE_TRUNC('day', {{params.timestamp_column}}) = '{{macros.ds_add(ds, -1)}}'
+                        TO DIRECTORY 's3://{{params.access}}:{{params.secret}}@{{params.target_bucket}}-{{macros.ds_add(ds, -1)}}';
+                    """,
+                params={
+                    "table": export_table['table'],
+                    "timestamp_column": export_table['timestamp_column'],
+                    "target_bucket": export_table['target_bucket'],
+                    "access": os.environ.get("ACCESS_KEY_ID"),
+                    "secret": os.environ.get("SECRET_ACCESS_KEY"),
+                }
             )
     chain(start, tg1, end)
+
+table_export_dag = table_export()
