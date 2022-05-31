@@ -1,1 +1,1 @@
-DELETE FROM {table} WHERE {column} = {value};
+DELETE FROM {table_fqn} WHERE {column} = {value};

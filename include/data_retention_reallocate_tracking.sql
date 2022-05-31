@@ -1,1 +1,1 @@
-INSERT INTO doc.retention_policy_tracking VALUES ('{schema}', '{table}', 'reallocate', {partition_value}) ON CONFLICT (table_name, table_schema, strategy) DO UPDATE SET last_partition_value = excluded.last_partition_value;
+INSERT INTO doc.retention_policy_tracking VALUES (%(schema)s, %(table)s, 'reallocate', %(value)s) ON CONFLICT (table_name, table_schema, strategy) DO UPDATE SET last_partition_value = excluded.last_partition_value;

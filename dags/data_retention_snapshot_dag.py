@@ -21,26 +21,22 @@ def get_policies(ds=None):
     sql = Path('include/data_retention_retrieve_snapshot_policies.sql')
     return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
 
-# Generate DROP statment for a given partition
+# Map index-based policy to readable dict structure
 @task
-def generate_sql_delete(policy):
-    return Path('include/data_retention_delete.sql') \
-        .read_text(encoding="utf-8").format(table=policy[2],
-                                            column=policy[3],
-                                            value=policy[4],
-                                           )
+def map_policy(policy):
+    return {
+        "schema": policy[0],
+        "table": policy[1],
+        "table_fqn": policy[2],
+        "column": policy[3],
+        "value": policy[4],
+        "target_repository_name": policy[5],
+    }
 
-# Generate DROP statment for a given partition
+# Generate SQL statment for a given partition
 @task
-def generate_sql_snapshot(policy):
-    return Path('include/data_retention_snapshot.sql').read_text(encoding="utf-8") \
-            .format(repository_name=policy[5],
-                    table_schema=policy[0],
-                    table_name=policy[1],
-                    table_fqn=policy[2],
-                    partition_column=policy[3],
-                    partition_value=policy[4],
-                   )
+def generate_sql(query_file, policy):
+    return Path(query_file).read_text(encoding="utf-8").format(**policy)
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
@@ -48,9 +44,11 @@ def generate_sql_snapshot(policy):
     catchup=False,
 )
 def data_retention_snapshot():
-    policies = get_policies()
-    sql_statements_snapshot = generate_sql_snapshot.expand(policy=policies)
-    sql_statements_delete = generate_sql_delete.expand(policy=policies)
+    policies = map_policy.expand(policy=get_policies())
+    sql_statements_snapshot = generate_sql \
+        .partial(query_file='include/data_retention_snapshot.sql').expand(policy=policies)
+    sql_statements_delete = generate_sql \
+        .partial(query_file='include/data_retention_delete.sql').expand(policy=policies)
 
     reallocate = PostgresOperator.partial(
         task_id="snapshot_partitions",

@@ -18,7 +18,7 @@ from airflow.decorators import dag, task
 @task
 def generate_sql(policy):
     return Path('include/data_retention_delete.sql') \
-        .read_text(encoding="utf-8").format(table=policy[0],
+        .read_text(encoding="utf-8").format(table_fqn=policy[0],
                                             column=policy[1],
                                             value=policy[2],
                                            )
