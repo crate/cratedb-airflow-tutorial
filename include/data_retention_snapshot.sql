@@ -1,1 +1,1 @@
-CREATE SNAPSHOT {repository_name}."{table_schema}.{table_name}-{partition_value}" TABLE {table_fqn} PARTITION ({partition_column} = {partition_value}) WITH ("wait_for_completion" = true);
+CREATE SNAPSHOT {target_repository_name}."{schema}.{table}-{value}" TABLE {table_fqn} PARTITION ({column} = {value}) WITH ("wait_for_completion" = true);

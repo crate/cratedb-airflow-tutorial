@@ -21,45 +21,44 @@ def get_policies(ds=None):
     sql = Path('include/data_retention_retrieve_reallocate_policies.sql')
     return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
 
+# Map index-based policy to readable dict structure
+@task
+def map_policy(policy):
+    return {
+        "schema": policy[0],
+        "table": policy[1],
+        "table_fqn": policy[2],
+        "column": policy[3],
+        "value": policy[4],
+        "attribute_name": policy[5],
+        "attribute_value": policy[6],
+    }
+
 # Generate SQL for reallocation
 @task
 def generate_sql_reallocate(policy):
-    return Path('include/data_retention_reallocate.sql').read_text(encoding="utf-8").format(
-        table=policy[2],
-        column=policy[3],
-        value=policy[4],
-        attribute_name=policy[5],
-        attribute_value=policy[6],
-    )
-
-# Generate SQL for tracking entry
-@task
-def generate_sql_tracking(policy):
-    return Path('include/data_retention_reallocate_tracking.sql').read_text(encoding="utf-8") \
-            .format(schema=policy[0],
-                    table=policy[1],
-                    partition_value=policy[4],
-                   )
+    return Path('include/data_retention_reallocate.sql').read_text(encoding="utf-8") \
+        .format(**policy)
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
+    template_searchpath=['include'],
 )
 def data_retention_reallocate():
-    policies = get_policies()
-    sql_statements_reallocate = generate_sql_reallocate.expand(policy=policies)
-    sql_statements_tracking = generate_sql_tracking.expand(policy=policies)
+    policies = map_policy.expand(policy=get_policies())
 
     reallocate = PostgresOperator.partial(
         task_id="reallocate_partitions",
         postgres_conn_id="cratedb_connection",
-    ).expand(sql=sql_statements_reallocate)
+    ).expand(sql=generate_sql_reallocate.expand(policy=policies))
 
     track = PostgresOperator.partial(
         task_id="add_tracking_information",
         postgres_conn_id="cratedb_connection",
-    ).expand(sql=sql_statements_tracking)
+        sql="data_retention_reallocate_tracking.sql",
+    ).expand(parameters=policies)
 
     reallocate >> track
 
