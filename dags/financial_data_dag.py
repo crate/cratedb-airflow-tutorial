@@ -19,7 +19,7 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.decorators import dag, task
 
 def get_sp500_ticker_symbols():
-    "Extracts S&P 500 companies' tickers from the S&P 500's wikipedia page"
+    """Extracts S&P 500 companies' tickers from the S&P 500's wikipedia page"""
 
     # Getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -45,7 +45,7 @@ def get_sp500_ticker_symbols():
 
 @task(execution_timeout=datetime.timedelta(minutes=3))
 def download_yfinance_data(ds=None):
-    "downloads Adjusted Close data from S&P 500 companies"
+    """Downloads Adjusted Close data from S&P 500 companies"""
 
     tickers = get_sp500_ticker_symbols()
     data = yf.download(tickers, start=ds)['Adj Close']
@@ -53,7 +53,7 @@ def download_yfinance_data(ds=None):
 
 @task(execution_timeout=datetime.timedelta(minutes=3))
 def prepare_data(string_data):
-    "creates a list of dictionaries with clean data values"
+    """Creates a list of dictionaries with clean data values"""
 
     # transforming to dataframe for easier manipulation
     df = pd.DataFrame.from_dict(json.loads(string_data), orient='index')

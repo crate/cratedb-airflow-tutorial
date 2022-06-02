@@ -14,18 +14,18 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
-# Generate DROP statment for a given partition
 @task
 def generate_sql(policy):
+    """Generate DROP statment for a given partition"""
     return Path('include/data_retention_delete.sql') \
         .read_text(encoding="utf-8").format(table_fqn=policy[0],
                                             column=policy[1],
                                             value=policy[2],
                                            )
 
-# Retrieve all partitions effected by a policy
 @task
 def get_policies(ds=None):
+    """Retrieve all partitions effected by a policy"""
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path('include/data_retention_retrieve_delete_policies.sql')
     return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
