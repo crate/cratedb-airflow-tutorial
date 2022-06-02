@@ -14,16 +14,16 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
-# Retrieve all partitions effected by a policy
 @task
 def get_policies(ds=None):
+    """Retrieve all partitions effected by a policy"""
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path('include/data_retention_retrieve_reallocate_policies.sql')
     return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
 
-# Map index-based policy to readable dict structure
 @task
 def map_policy(policy):
+    """Map index-based policy to readable dict structure"""
     return {
         "schema": policy[0],
         "table": policy[1],
@@ -34,9 +34,9 @@ def map_policy(policy):
         "attribute_value": policy[6],
     }
 
-# Generate SQL for reallocation
 @task
 def generate_sql_reallocate(policy):
+    """Generate SQL for reallocation"""
     return Path('include/data_retention_reallocate.sql').read_text(encoding="utf-8") \
         .format(**policy)
 
