@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS "iot"."smart_home_data" (
    "living_room" DOUBLE PRECISION,
    "temperature" DOUBLE PRECISION,
    "humidity" DOUBLE PRECISION
-)
+);
 
 CREATE TABLE IF NOT EXISTS "iot"."smart_home_data_temp" (
    "time" INTEGER,
