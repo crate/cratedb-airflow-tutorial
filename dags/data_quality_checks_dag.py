@@ -81,7 +81,7 @@ with DAG(
         for file in os.listdir(FILE_DIR):
             LocalFilesystemToS3Operator(
                 task_id=f"upload_{file}",
-                filename=FILE_DIR+f"/{file}",
+                filename=f"{FILE_DIR}/{file}",
                 dest_key=f"incoming-data/{file}",
                 dest_bucket=S3_BUCKET,
                 aws_conn_id="aws_default",
