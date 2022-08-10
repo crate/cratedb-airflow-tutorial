@@ -11,6 +11,7 @@ import logging
 from airflow.utils.task_group import TaskGroup
 from airflow import DAG
 from airflow.utils.dates import datetime
+from airflow.decorators import task
 
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
@@ -32,13 +33,13 @@ TABLE = os.environ.get("TABLE")
 
 
 def slack_failure_notification(context):
-    task = context.get('task_instance').task_id
+    task_id = context.get('task_instance').task_id
     dag_id = context.get('task_instance').dag_id
     exec_date = context.get('execution_date')
     log_url = context.get('task_instance').log_url
     slack_msg = f"""
             :red_circle: Task Failed. 
-            *Task*: {task}  
+            *Task*: {task_id}  
             *Dag*: {dag_id} 
             *Execution Time*: {exec_date}  
             *Log Url*: {log_url} 
@@ -50,12 +51,14 @@ def slack_failure_notification(context):
     return failed_alert.execute(context=context)
 
 
+@task
 def get_files_from_s3(bucket, prefix_value):
     s3_hook = S3Hook()
     paths = s3_hook.list_keys(bucket_name=bucket, prefix=prefix_value)
     return paths
 
 
+@task
 def get_import_statements(bucket, prefix_value):
     s3_hook = S3Hook()
     file_paths = s3_hook.list_keys(bucket_name=bucket, prefix=prefix_value)
@@ -88,10 +91,13 @@ with DAG(
                 replace=True,
             )
 
+    import_stmt = get_import_statements(S3_BUCKET, "incoming")
+    upload >> import_stmt
+
     import_data = PostgresOperator.partial(
         task_id="import_data_to_cratedb",
         postgres_conn_id="cratedb_connection"
-    ).expand(sql=get_import_statements(S3_BUCKET, "incoming"))
+    ).expand(sql=import_stmt)
 
     refresh = PostgresOperator(
         task_id="refresh_table",
@@ -103,6 +109,7 @@ with DAG(
                 "table": TEMP_TABLE,
         }
     )
+    import_stmt >> import_data >> refresh
 
     with TaskGroup(group_id="home_data_checks") as checks:
         column_checks = SQLColumnCheckOperator.partial(
@@ -142,6 +149,8 @@ with DAG(
         trigger_rule='all_done'
     )
 
+    refresh >>  checks >> move_data >> delete_data
+
     with TaskGroup(group_id="move_incoming_files") as processed:
         for file in os.listdir(FILE_DIR):
             S3CopyObjectOperator(
@@ -153,11 +162,12 @@ with DAG(
                 dest_bucket_key=f"processed-data/{file}",
             )
 
+    s3_files = get_files_from_s3(S3_BUCKET, "incoming")
+
     delete_files = S3DeleteObjectsOperator.partial(
         task_id='delete_incoming_files',
         aws_conn_id='aws_default',
         bucket=S3_BUCKET
-    ).expand(keys=get_files_from_s3(S3_BUCKET, "incoming"))
+    ).expand(keys=s3_files)
 
-
-upload >> import_data >> refresh >> checks >> move_data >> delete_data >> processed >> delete_files
+delete_data >> processed >> s3_files
