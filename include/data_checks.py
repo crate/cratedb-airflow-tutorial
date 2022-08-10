@@ -27,5 +27,8 @@ Table Level Checks
 """
 TABLE_CHECKS = [
     {"row_count_check": {"check_statement": "COUNT(*) > 100000"}},
-    {"total_usage_check": {"check_statement": "dishwasher + home_office + fridge + wine_cellar + kitchen + garage_door + microwave + barn + well + living_room  <= house_overall"}}
+    {"total_usage_check": {"check_statement": "dishwasher + home_office + "
+                           + "fridge + wine_cellar + kitchen + "
+                           + "garage_door + microwave + barn + "
+                           + " well + living_room  <= house_overall"}}
 ]
