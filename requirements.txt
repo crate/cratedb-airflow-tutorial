@@ -5,3 +5,4 @@ yfinance==0.1.74
 apache-airflow-providers-common-sql>=1.2.0
 apache-airflow-providers-amazon==5.0.0
 apache-airflow-providers-slack
+parquet-tools
