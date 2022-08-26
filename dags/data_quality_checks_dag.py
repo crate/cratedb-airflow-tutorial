@@ -16,10 +16,17 @@ from airflow.models.baseoperator import chain
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
-from airflow.providers.common.sql.operators.sql import SQLColumnCheckOperator, SQLTableCheckOperator
-from airflow.providers.amazon.aws.transfers.local_to_s3 import LocalFilesystemToS3Operator
+from airflow.providers.common.sql.operators.sql import (
+    SQLColumnCheckOperator,
+    SQLTableCheckOperator,
+)
+from airflow.providers.amazon.aws.transfers.local_to_s3 import (
+    LocalFilesystemToS3Operator,
+)
 from airflow.providers.amazon.aws.operators.s3_copy_object import S3CopyObjectOperator
-from airflow.providers.amazon.aws.operators.s3_delete_objects import S3DeleteObjectsOperator
+from airflow.providers.amazon.aws.operators.s3_delete_objects import (
+    S3DeleteObjectsOperator,
+)
 
 S3_BUCKET = os.environ.get("S3_BUCKET")
 ACCESS_KEY_ID = os.environ.get("ACCESS_KEY_ID")
@@ -28,11 +35,12 @@ FILE_DIR = os.environ.get("FILE_DIR")
 TEMP_TABLE = os.environ.get("TEMP_TABLE")
 TABLE = os.environ.get("TABLE")
 
+
 def slack_failure_notification(context):
-    task_id = context.get('task_instance').task_id
-    dag_id = context.get('task_instance').dag_id
-    exec_date = context.get('execution_date')
-    log_url = context.get('task_instance').log_url
+    task_id = context.get("task_instance").task_id
+    dag_id = context.get("task_instance").dag_id
+    exec_date = context.get("execution_date")
+    log_url = context.get("task_instance").log_url
     slack_msg = f"""
             :red_circle: Task Failed. 
             *Task*: {task_id}  
@@ -41,16 +49,17 @@ def slack_failure_notification(context):
             *Log Url*: {log_url} 
             """
     failed_alert = SlackWebhookOperator(
-        task_id='slack_notification',
-        http_conn_id='slack_webhook',
-        message=slack_msg)
+        task_id="slack_notification", http_conn_id="slack_webhook", message=slack_msg
+    )
     return failed_alert.execute(context=context)
+
 
 @task
 def get_files_from_s3(bucket, prefix_value):
     s3_hook = S3Hook()
     paths = s3_hook.list_keys(bucket_name=bucket, prefix=prefix_value)
     return paths
+
 
 @task
 def get_import_statements(files):
@@ -62,15 +71,14 @@ def get_import_statements(files):
         statements.append(sql)
     return statements
 
+
 with DAG(
     "data_quality_checks",
-    default_args={
-        'on_failure_callback':slack_failure_notification
-    },
+    default_args={"on_failure_callback": slack_failure_notification},
     description="DAG for checking quality of home metering data.",
     start_date=datetime(2021, 1, 1),
     schedule_interval=None,
-    catchup=False
+    catchup=False,
 ) as dag:
     with TaskGroup(group_id="upload_local_files") as upload:
         for file in os.listdir(FILE_DIR):
@@ -86,8 +94,7 @@ with DAG(
     import_stmt = get_import_statements(s3_files)
 
     import_data = PostgresOperator.partial(
-        task_id="import_data_to_cratedb",
-        postgres_conn_id="cratedb_connection"
+        task_id="import_data_to_cratedb", postgres_conn_id="cratedb_connection"
     ).expand(sql=import_stmt)
 
     refresh = PostgresOperator(
@@ -97,8 +104,8 @@ with DAG(
                 REFRESH TABLE {{params.temp_table}};   
             """,
         params={
-                "temp_table": TEMP_TABLE,
-        }
+            "temp_table": TEMP_TABLE,
+        },
     )
 
     with TaskGroup(group_id="home_data_checks") as checks:
@@ -109,23 +116,13 @@ with DAG(
             column_mapping={
                 "time": {
                     "null_check": {"equal_to": 0},
-                    "unique_check": {"equal_to": 0}
+                    "unique_check": {"equal_to": 0},
                 },
-                "use_kw": {
-                    "null_check": {"equal_to": 0}
-                },
-                "gen_kw": {
-                    "null_check": {"equal_to": 0}
-                },
-                "temperature": {
-                    "min": {"geq_to": -20},
-                    "max": {"less_than": 99}
-                },
-                "humidity": {
-                    "min": {"geq_to": 0},
-                    "max": {"less_than": 1}
-                }
-            }
+                "use_kw": {"null_check": {"equal_to": 0}},
+                "gen_kw": {"null_check": {"equal_to": 0}},
+                "temperature": {"min": {"geq_to": -20}, "max": {"less_than": 99}},
+                "humidity": {"min": {"geq_to": 0}, "max": {"less_than": 1}},
+            },
         )
 
         table_checks = SQLTableCheckOperator(
@@ -133,16 +130,14 @@ with DAG(
             conn_id="cratedb_connection",
             table=TEMP_TABLE,
             checks={
-                "row_count_check": {
-                    "check_statement": "COUNT(*) > 100000"
-                },
+                "row_count_check": {"check_statement": "COUNT(*) > 100000"},
                 "total_usage_check": {
                     "check_statement": "dishwasher + home_office + "
-                           + "fridge + wine_cellar + kitchen + "
-                           + "garage_door + microwave + barn + "
-                           + " well + living_room  <= house_overall"
-                    }
-            }
+                    + "fridge + wine_cellar + kitchen + "
+                    + "garage_door + microwave + barn + "
+                    + " well + living_room  <= house_overall"
+                },
+            },
         )
 
     move_data = PostgresOperator(
@@ -151,10 +146,7 @@ with DAG(
         sql="""
                 INSERT INTO {{params.table}} SELECT * FROM {{params.temp_table}};   
             """,
-        params={
-                "table": TABLE,
-                "temp_table": TEMP_TABLE
-        }
+        params={"table": TABLE, "temp_table": TEMP_TABLE},
     )
 
     delete_data = PostgresOperator(
@@ -163,17 +155,15 @@ with DAG(
         sql="""
                 DELETE FROM {{params.temp_table}};   
             """,
-        params={
-                "temp_table": TEMP_TABLE
-        },
-        trigger_rule='all_done'
+        params={"temp_table": TEMP_TABLE},
+        trigger_rule="all_done",
     )
 
     with TaskGroup(group_id="move_incoming_files") as processed:
         for file in os.listdir(FILE_DIR):
             S3CopyObjectOperator(
                 task_id=f"move_{file}",
-                aws_conn_id='aws_default',
+                aws_conn_id="aws_default",
                 source_bucket_name=S3_BUCKET,
                 source_bucket_key=f"incoming-data/{file}",
                 dest_bucket_name=S3_BUCKET,
@@ -181,9 +171,7 @@ with DAG(
             )
 
     delete_files = S3DeleteObjectsOperator.partial(
-        task_id='delete_incoming_files',
-        aws_conn_id='aws_default',
-        bucket=S3_BUCKET
+        task_id="delete_incoming_files", aws_conn_id="aws_default", bucket=S3_BUCKET
     ).expand(keys=s3_files)
 
     chain(
@@ -196,5 +184,5 @@ with DAG(
         move_data,
         delete_data,
         processed,
-        delete_files
+        delete_files,
     )
