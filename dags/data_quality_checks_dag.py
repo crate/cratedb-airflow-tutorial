@@ -5,7 +5,19 @@ Prerequisites
 -------------
 In CrateDB, set up tables for temporarily and permanently storing incoming data.
 See the file setup/smart_home_data.sql in this repository.
+
+To run this DAG you need to set environment variables:
+
+AIRFLOW_CONN_CRATEDB_CONNECTION=postgresql://<username>:<pass>@<host>:<port>/doc?sslmode=required
+S3_BUCKET=<bucket_name>
+FILE_DIR=<path_to_your_data>
+AIRFLOW_CONN_AWS_DEFAULT=aws://<your_aws_access_key>:<your_aws_secret_key>@
+TEMP_TABLE=<name_temporary_data>
+TABLE=<name_permanent_data>
+ACCESS_KEY_ID=<your_aws_access_key>
+SECRET_ACCESS_KEY=<your_aws_secret_key>
 """
+
 import os
 from airflow.utils.task_group import TaskGroup
 from airflow import DAG
