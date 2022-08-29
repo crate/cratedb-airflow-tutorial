@@ -81,17 +81,18 @@ To overcome this issue, start Astronomer without the BuildKit feature: `DOCKER_B
 
 ## Code linting
 
-Before opening a pull request, please run [pylint](https://www.pylint.org) and address all reported issues. To install pylint, run:
+Before opening a pull request, please run [pylint](https://www.pylint.org) and [black](https://github.com/psf/black). To install all dependencies, run:
 
 ```shell
 python -m pip install --upgrade -e ".[develop]"
 python -m pip install --upgrade -r requirements.txt
 ```
 
-`pylint` can be run via:
+Then run `pylint` and `black` using:
 
 ```shell
 python -m pylint dags
+python -m black .
 ```
 
 ## Testing
