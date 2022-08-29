@@ -14,12 +14,16 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
+
 @task
 def get_policies(ds=None):
     """Retrieve all partitions effected by a policy"""
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
-    sql = Path('include/data_retention_retrieve_snapshot_policies.sql')
-    return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
+    sql = Path("include/data_retention_retrieve_snapshot_policies.sql")
+    return pg_hook.get_records(
+        sql=sql.read_text(encoding="utf-8"), parameters={"day": ds}
+    )
+
 
 @task
 def map_policy(policy):
@@ -33,10 +37,12 @@ def map_policy(policy):
         "target_repository_name": policy[5],
     }
 
+
 @task
 def generate_sql(query_file, policy):
     """Generate SQL statment for a given partition"""
     return Path(query_file).read_text(encoding="utf-8").format(**policy)
+
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
@@ -45,10 +51,12 @@ def generate_sql(query_file, policy):
 )
 def data_retention_snapshot():
     policies = map_policy.expand(policy=get_policies())
-    sql_statements_snapshot = generate_sql \
-        .partial(query_file='include/data_retention_snapshot.sql').expand(policy=policies)
-    sql_statements_delete = generate_sql \
-        .partial(query_file='include/data_retention_delete.sql').expand(policy=policies)
+    sql_statements_snapshot = generate_sql.partial(
+        query_file="include/data_retention_snapshot.sql"
+    ).expand(policy=policies)
+    sql_statements_delete = generate_sql.partial(
+        query_file="include/data_retention_delete.sql"
+    ).expand(policy=policies)
 
     reallocate = PostgresOperator.partial(
         task_id="snapshot_partitions",
@@ -61,5 +69,6 @@ def data_retention_snapshot():
     ).expand(sql=sql_statements_delete)
 
     reallocate >> delete
+
 
 data_retention_snapshot_dag = data_retention_snapshot()

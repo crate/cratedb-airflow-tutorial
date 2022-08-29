@@ -22,7 +22,9 @@ from airflow.operators.python import PythonOperator
 
 def get_processed_files(_ti):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_demo_connection")
-    records = pg_hook.get_records(sql='SELECT file_name FROM nyc_taxi.load_files_processed')
+    records = pg_hook.get_records(
+        sql="SELECT file_name FROM nyc_taxi.load_files_processed"
+    )
 
     # flatten nested list as there is only one column
     return list(map(lambda record: record[0], records))
@@ -31,9 +33,9 @@ def get_processed_files(_ti):
 def clean_data_urls(ti):
     data_urls_raw = ti.xcom_pull(task_ids="download_data_urls", key="return_value")
 
-    data_urls = data_urls_raw.split('\n')
+    data_urls = data_urls_raw.split("\n")
     # we only import Yellow tripdata for now due to different CSV schemas
-    data_urls_filtered = filter(lambda element: 'yellow' in element, data_urls)
+    data_urls_filtered = filter(lambda element: "yellow" in element, data_urls)
 
     return list(data_urls_filtered)
 
@@ -51,7 +53,7 @@ def process_new_files(ti):
     for missing_url in missing_urls:
         logging.info(missing_url)
 
-        file_name = missing_url.split('/').pop()
+        file_name = missing_url.split("/").pop()
 
         PostgresOperator(
             task_id=f"copy_{file_name}",
@@ -61,13 +63,13 @@ def process_new_files(ti):
                     FROM '{missing_url}'
                     WITH (format = 'csv', empty_string_as_null = true)
                     RETURN SUMMARY;
-                """
+                """,
         ).execute({})
 
         PostgresOperator(
             task_id=f"log_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
-            sql=Path('include/taxi-insert.sql').read_text(encoding="utf-8"),
+            sql=Path("include/taxi-insert.sql").read_text(encoding="utf-8"),
         ).execute({})
 
         PostgresOperator(
@@ -79,7 +81,7 @@ def process_new_files(ti):
         PostgresOperator(
             task_id=f"purge_staging_{file_name}",
             postgres_conn_id="cratedb_demo_connection",
-            sql="DELETE FROM nyc_taxi.load_trips_staging;"
+            sql="DELETE FROM nyc_taxi.load_trips_staging;",
         ).execute({})
 
 
@@ -90,10 +92,10 @@ with DAG(
     catchup=False,
 ) as dag:
     download_data_urls = SimpleHttpOperator(
-        task_id='download_data_urls',
-        method='GET',
-        http_conn_id='http_raw_github',
-        endpoint='toddwschneider/nyc-taxi-data/master/setup_files/raw_data_urls.txt',
+        task_id="download_data_urls",
+        method="GET",
+        http_conn_id="http_raw_github",
+        endpoint="toddwschneider/nyc-taxi-data/master/setup_files/raw_data_urls.txt",
         headers={},
     )
 
@@ -124,7 +126,7 @@ with DAG(
     purge_staging_init = PostgresOperator(
         task_id="purge_staging_init",
         postgres_conn_id="cratedb_demo_connection",
-        sql="DELETE FROM nyc_taxi.load_trips_staging;"
+        sql="DELETE FROM nyc_taxi.load_trips_staging;",
     )
 
     process_new_files = PythonOperator(
