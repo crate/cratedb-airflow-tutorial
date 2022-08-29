@@ -1,4 +1,7 @@
 beautifulsoup4==4.11.1
 apache-airflow[pandas]
-requests==2.28.1
+requests>=2.28.0
 yfinance==0.1.74
+apache-airflow-providers-common-sql
+apache-airflow-providers-amazon==4.1.0
+apache-airflow-providers-slack
