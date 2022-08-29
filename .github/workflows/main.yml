@@ -6,7 +6,7 @@ on:
 
 jobs:
   lint:
-    name: Run pylint
+    name: Run black/pylint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,6 +26,9 @@ jobs:
       - name: Run pylint
         run: |
           python -m pylint dags tests include
+
+      - name: Run black
+        uses: psf/black@stable
 
   test:
     name: Run pytest

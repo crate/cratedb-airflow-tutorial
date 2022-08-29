@@ -9,11 +9,7 @@ setup(
         "apache-airflow-providers-postgres==5.2.0",
     ],
     extras_require={
-        "develop": [
-            "pylint==2.15.2"
-        ],
-        "testing": [
-            "pytest==7.1.3",
-        ],
+        "develop": ["pylint==2.15.2", "black==22.8.0"],
+        "testing": ["pytest==7.1.3"],
     },
 )
