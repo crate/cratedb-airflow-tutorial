@@ -5,8 +5,8 @@ setup(
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[
-        "apache-airflow==2.3.3",
-        "apache-airflow-providers-postgres==5.1.0",
+        "apache-airflow==2.3.4",
+        "apache-airflow-providers-postgres==5.2.0",
     ],
     extras_require={
         "develop": [
