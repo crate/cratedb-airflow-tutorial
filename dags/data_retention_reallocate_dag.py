@@ -14,12 +14,16 @@ from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
+
 @task
 def get_policies(ds=None):
     """Retrieve all partitions effected by a policy"""
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
-    sql = Path('include/data_retention_retrieve_reallocate_policies.sql')
-    return pg_hook.get_records(sql=sql.read_text(encoding="utf-8"), parameters={"day": ds})
+    sql = Path("include/data_retention_retrieve_reallocate_policies.sql")
+    return pg_hook.get_records(
+        sql=sql.read_text(encoding="utf-8"), parameters={"day": ds}
+    )
+
 
 @task
 def map_policy(policy):
@@ -34,17 +38,22 @@ def map_policy(policy):
         "attribute_value": policy[6],
     }
 
+
 @task
 def generate_sql_reallocate(policy):
     """Generate SQL for reallocation"""
-    return Path('include/data_retention_reallocate.sql').read_text(encoding="utf-8") \
+    return (
+        Path("include/data_retention_reallocate.sql")
+        .read_text(encoding="utf-8")
         .format(**policy)
+    )
+
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
     schedule_interval="@daily",
     catchup=False,
-    template_searchpath=['include'],
+    template_searchpath=["include"],
 )
 def data_retention_reallocate():
     policies = map_policy.expand(policy=get_policies())
@@ -61,5 +70,6 @@ def data_retention_reallocate():
     ).expand(parameters=policies)
 
     reallocate >> track
+
 
 data_retention_reallocate_dag = data_retention_reallocate()

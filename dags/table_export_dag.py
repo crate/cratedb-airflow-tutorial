@@ -19,9 +19,9 @@ from include.table_exports import TABLES
     catchup=False,
 )
 def table_export():
-    start = EmptyOperator(task_id='start')
-    end = EmptyOperator(task_id='end')
-    with TaskGroup(group_id='table_exports') as tg1:
+    start = EmptyOperator(task_id="start")
+    end = EmptyOperator(task_id="end")
+    with TaskGroup(group_id="table_exports") as tg1:
         for export_table in TABLES:
             PostgresOperator(
                 task_id=f"copy_{export_table['table']}",
@@ -31,13 +31,14 @@ def table_export():
                         TO DIRECTORY 's3://{{params.access}}:{{params.secret}}@{{params.target_bucket}}-{{macros.ds_add(ds, -1)}}';
                     """,
                 params={
-                    "table": export_table['table'],
-                    "timestamp_column": export_table['timestamp_column'],
-                    "target_bucket": export_table['target_bucket'],
+                    "table": export_table["table"],
+                    "timestamp_column": export_table["timestamp_column"],
+                    "target_bucket": export_table["target_bucket"],
                     "access": os.environ.get("ACCESS_KEY_ID"),
                     "secret": os.environ.get("SECRET_ACCESS_KEY"),
-                }
+                },
             )
     chain(start, tg1, end)
+
 
 table_export_dag = table_export()
