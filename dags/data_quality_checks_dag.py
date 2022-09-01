@@ -6,8 +6,11 @@ Prerequisites
 In CrateDB, set up tables for temporarily and permanently storing incoming data.
 See the file setup/smart_home_data.sql in this repository.
 
-To run this DAG you need to set environment variables:
+To run this DAG with sample data, use the following files:
+- https://crate-astro-tutorial.s3.eu-central-1.amazonaws.com/home_meter_data/home_data_aa
+- https://crate-astro-tutorial.s3.eu-central-1.amazonaws.com/home_meter_data/home_data_ab
 
+Finally, you need to set environment variables:
 AIRFLOW_CONN_CRATEDB_CONNECTION=postgresql://<username>:<pass>@<host>:<port>/doc?sslmode=required
 S3_BUCKET=<bucket_name>
 FILE_DIR=<path_to_your_data>
