@@ -30,7 +30,7 @@ from airflow.models.baseoperator import chain
 
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 from airflow.providers.common.sql.operators.sql import (
     SQLColumnCheckOperator,
     SQLTableCheckOperator,
@@ -38,8 +38,8 @@ from airflow.providers.common.sql.operators.sql import (
 from airflow.providers.amazon.aws.transfers.local_to_s3 import (
     LocalFilesystemToS3Operator,
 )
-from airflow.providers.amazon.aws.operators.s3_copy_object import S3CopyObjectOperator
-from airflow.providers.amazon.aws.operators.s3_delete_objects import (
+from airflow.providers.amazon.aws.operators.s3 import (
+    S3CopyObjectOperator,
     S3DeleteObjectsOperator,
 )
 
