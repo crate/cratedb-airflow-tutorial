@@ -10,10 +10,10 @@ setup(
     ],
     extras_require={
         "develop": [
-            "pylint==2.15.0"
+            "pylint==2.15.2"
         ],
         "testing": [
-            "pytest==7.1.2",
+            "pytest==7.1.3",
         ],
     },
 )
