@@ -15,7 +15,7 @@ from include.table_exports import TABLES
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
 )
 def table_export():

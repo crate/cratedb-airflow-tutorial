@@ -88,7 +88,7 @@ def process_new_files(ti):
 with DAG(
     dag_id="nyc-taxi",
     start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
 ) as dag:
     download_data_urls = SimpleHttpOperator(

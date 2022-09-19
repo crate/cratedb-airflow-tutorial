@@ -41,7 +41,7 @@ def get_policies(ds=None):
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
 )
 def data_retention_delete():
