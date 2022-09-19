@@ -7,8 +7,8 @@ In CrateDB, set up tables for temporarily and permanently storing incoming data.
 See the file setup/smart_home_data.sql in this repository.
 
 To run this DAG with sample data, use the following files:
-- https://srv.demo.crate.io/datasets/home_data_aa
-- https://srv.demo.crate.io/datasets/home_data_ab
+- https://srv.demo.crate.io/datasets/home_data_aa.csv
+- https://srv.demo.crate.io/datasets/home_data_ab.csv
 
 Finally, you need to set environment variables:
 AIRFLOW_CONN_CRATEDB_CONNECTION=postgresql://<username>:<pass>@<host>:<port>/doc?sslmode=required
@@ -66,12 +66,14 @@ def slack_failure_notification(context):
     return failed_alert.execute(context=context)
 
 
-# Always execute this task, even if previous uploads have failed. There can be already existing files in S3 that haven't been processed yet.
+# Always execute this task, even if previous uploads have failed. There can be already existing
+# files in S3 that haven't been processed yet.
 @task(trigger_rule="all_done")
 def get_files_from_s3(bucket, prefix_value):
     s3_hook = S3Hook()
     paths = s3_hook.list_keys(bucket_name=bucket, prefix=prefix_value)
-    return paths
+    # list_keys also returns directories, we are only interested in files for further processing
+    return list(filter(lambda element: element.endswith(".csv"), paths))
 
 
 @task
@@ -85,17 +87,30 @@ def get_import_statements(files):
     return statements
 
 
+@task
+def list_local_files(directory):
+    return list(filter(lambda entry: entry.endswith(".csv"), os.listdir(directory)))
+
+
+def upload_kwargs(file):
+    return {
+        "filename": f"{FILE_DIR}/{file}",
+        "dest_key": f"incoming-data/{file}",
+    }
+
+
 @task_group
 def upload_local_files():
-    for file in os.listdir(FILE_DIR):
-        LocalFilesystemToS3Operator(
-            task_id=f"upload_{file}",
-            filename=f"{FILE_DIR}/{file}",
-            dest_key=f"incoming-data/{file}",
-            dest_bucket=S3_BUCKET,
-            aws_conn_id="aws_default",
-            replace=True,
-        )
+    files = list_local_files(FILE_DIR)
+    # pylint: disable=E1101
+    file_upload_kwargs = files.map(upload_kwargs)
+
+    LocalFilesystemToS3Operator.partial(
+        task_id="upload_csv",
+        dest_bucket=S3_BUCKET,
+        aws_conn_id="aws_default",
+        replace=True,
+    ).expand_kwargs(file_upload_kwargs)
 
 
 @task_group
@@ -126,23 +141,32 @@ def home_data_checks():
                 "check_statement": "dishwasher + home_office + "
                 + "fridge + wine_cellar + kitchen + "
                 + "garage_door + microwave + barn + "
-                + " well + living_room  <= house_overall"
+                + "well + living_room <= house_overall"
             },
         },
     )
 
 
+def move_incoming_kwargs(file):
+    # file includes the whole directory structure
+    # Split into parts, replace the first one, and join again
+    parts = file.split("/")
+    parts[0] = "processed-data"
+
+    return {
+        "source_bucket_key": file,
+        "dest_bucket_key": "/".join(parts),
+    }
+
+
 @task_group
-def move_incoming_files():
-    for file in os.listdir(FILE_DIR):
-        S3CopyObjectOperator(
-            task_id=f"move_{file}",
-            aws_conn_id="aws_default",
-            source_bucket_name=S3_BUCKET,
-            source_bucket_key=f"incoming-data/{file}",
-            dest_bucket_name=S3_BUCKET,
-            dest_bucket_key=f"processed-data/{file}",
-        )
+def move_incoming_files(s3_files):
+    S3CopyObjectOperator.partial(
+        task_id="move_incoming",
+        aws_conn_id="aws_default",
+        source_bucket_name=S3_BUCKET,
+        dest_bucket_name=S3_BUCKET,
+    ).expand_kwargs(s3_files.map(move_incoming_kwargs))
 
 
 @dag(
@@ -193,10 +217,12 @@ def data_quality_checks():
         trigger_rule="all_done",
     )
 
-    processed = move_incoming_files()
+    processed = move_incoming_files(s3_files)
 
     delete_files = S3DeleteObjectsOperator.partial(
-        task_id="delete_incoming_files", aws_conn_id="aws_default", bucket=S3_BUCKET
+        task_id="delete_incoming_files",
+        aws_conn_id="aws_default",
+        bucket=S3_BUCKET,
     ).expand(keys=s3_files)
 
     chain(
@@ -213,8 +239,8 @@ def data_quality_checks():
     )
 
     # Require that data must have moved to the target table before marking files as processes.
-    # delete_from_temp_table always gets executed, even if previous tasks failed. We only want to mark files as processed
-    # if moving data to the target table has not failed.
+    # delete_from_temp_table always gets executed, even if previous tasks failed. We only want
+    # to mark files as processed if moving data to the target table has not failed.
     move_data >> processed
 
 
