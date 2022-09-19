@@ -22,10 +22,9 @@ SECRET_ACCESS_KEY=<your_aws_secret_key>
 """
 
 import os
+import pendulum
 from airflow.utils.task_group import TaskGroup
-from airflow import DAG
-from airflow.utils.dates import datetime
-from airflow.decorators import task
+from airflow.decorators import dag, task
 from airflow.models.baseoperator import chain
 
 from airflow.providers.postgres.operators.postgres import PostgresOperator
@@ -87,14 +86,14 @@ def get_import_statements(files):
     return statements
 
 
-with DAG(
-    "data_quality_checks",
+@dag(
     default_args={"on_failure_callback": slack_failure_notification},
     description="DAG for checking quality of home metering data.",
-    start_date=datetime(2021, 1, 1),
-    schedule_interval=None,
+    start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
+    schedule=None,
     catchup=False,
-) as dag:
+)
+def data_quality_checks():
     with TaskGroup(group_id="upload_local_files") as upload:
         for file in os.listdir(FILE_DIR):
             LocalFilesystemToS3Operator(
@@ -124,7 +123,7 @@ with DAG(
     )
 
     with TaskGroup(group_id="home_data_checks") as checks:
-        column_checks = SQLColumnCheckOperator(
+        SQLColumnCheckOperator(
             task_id="home_data_column_check",
             conn_id="cratedb_connection",
             table=TEMP_TABLE,
@@ -140,7 +139,7 @@ with DAG(
             },
         )
 
-        table_checks = SQLTableCheckOperator(
+        SQLTableCheckOperator(
             task_id="home_data_table_check",
             conn_id="cratedb_connection",
             table=TEMP_TABLE,
@@ -201,3 +200,6 @@ with DAG(
         processed,
         delete_files,
     )
+
+
+data_quality_checks()
