@@ -53,4 +53,4 @@ def data_retention_delete():
     ).expand(sql=sql_statements)
 
 
-data_retention_delete_dag = data_retention_delete()
+data_retention_delete()

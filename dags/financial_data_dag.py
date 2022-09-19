@@ -110,4 +110,4 @@ def financial_data_import():
     ).expand(parameters=prepared_data)
 
 
-financial_data_dag = financial_data_import()
+financial_data_import()

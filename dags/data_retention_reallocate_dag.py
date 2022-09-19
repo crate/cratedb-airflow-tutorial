@@ -72,4 +72,4 @@ def data_retention_reallocate():
     reallocate >> track
 
 
-data_retention_reallocate_dag = data_retention_reallocate()
+data_retention_reallocate()

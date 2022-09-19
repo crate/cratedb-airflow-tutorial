@@ -41,4 +41,4 @@ def table_export():
     chain(start, tg1, end)
 
 
-table_export_dag = table_export()
+table_export()

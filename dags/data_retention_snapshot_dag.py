@@ -71,4 +71,4 @@ def data_retention_snapshot():
     reallocate >> delete
 
 
-data_retention_snapshot_dag = data_retention_snapshot()
+data_retention_snapshot()
