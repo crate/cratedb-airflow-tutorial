@@ -66,7 +66,8 @@ def slack_failure_notification(context):
     return failed_alert.execute(context=context)
 
 
-@task
+# Always execute this task, even if previous uploads have failed. There can be already existing files in S3 that haven't been processed yet.
+@task(trigger_rule="all_done")
 def get_files_from_s3(bucket, prefix_value):
     s3_hook = S3Hook()
     paths = s3_hook.list_keys(bucket_name=bucket, prefix=prefix_value)
@@ -210,6 +211,11 @@ def data_quality_checks():
         processed,
         delete_files,
     )
+
+    # Require that data must have moved to the target table before marking files as processes.
+    # delete_from_temp_table always gets executed, even if previous tasks failed. We only want to mark files as processed
+    # if moving data to the target table has not failed.
+    move_data >> processed
 
 
 data_quality_checks()
