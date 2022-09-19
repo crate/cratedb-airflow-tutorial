@@ -23,10 +23,8 @@ SECRET_ACCESS_KEY=<your_aws_secret_key>
 
 import os
 import pendulum
-from airflow.utils.task_group import TaskGroup
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.models.baseoperator import chain
-
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
@@ -86,6 +84,66 @@ def get_import_statements(files):
     return statements
 
 
+@task_group
+def upload_local_files():
+    for file in os.listdir(FILE_DIR):
+        LocalFilesystemToS3Operator(
+            task_id=f"upload_{file}",
+            filename=f"{FILE_DIR}/{file}",
+            dest_key=f"incoming-data/{file}",
+            dest_bucket=S3_BUCKET,
+            aws_conn_id="aws_default",
+            replace=True,
+        )
+
+
+@task_group
+def home_data_checks():
+    SQLColumnCheckOperator(
+        task_id="home_data_column_check",
+        conn_id="cratedb_connection",
+        table=TEMP_TABLE,
+        column_mapping={
+            "time": {
+                "null_check": {"equal_to": 0},
+                "unique_check": {"equal_to": 0},
+            },
+            "use_kw": {"null_check": {"equal_to": 0}},
+            "gen_kw": {"null_check": {"equal_to": 0}},
+            "temperature": {"min": {"geq_to": -20}, "max": {"less_than": 99}},
+            "humidity": {"min": {"geq_to": 0}, "max": {"less_than": 1}},
+        },
+    )
+
+    SQLTableCheckOperator(
+        task_id="home_data_table_check",
+        conn_id="cratedb_connection",
+        table=TEMP_TABLE,
+        checks={
+            "row_count_check": {"check_statement": "COUNT(*) > 100000"},
+            "total_usage_check": {
+                "check_statement": "dishwasher + home_office + "
+                + "fridge + wine_cellar + kitchen + "
+                + "garage_door + microwave + barn + "
+                + " well + living_room  <= house_overall"
+            },
+        },
+    )
+
+
+@task_group
+def move_incoming_files():
+    for file in os.listdir(FILE_DIR):
+        S3CopyObjectOperator(
+            task_id=f"move_{file}",
+            aws_conn_id="aws_default",
+            source_bucket_name=S3_BUCKET,
+            source_bucket_key=f"incoming-data/{file}",
+            dest_bucket_name=S3_BUCKET,
+            dest_bucket_key=f"processed-data/{file}",
+        )
+
+
 @dag(
     default_args={"on_failure_callback": slack_failure_notification},
     description="DAG for checking quality of home metering data.",
@@ -94,16 +152,7 @@ def get_import_statements(files):
     catchup=False,
 )
 def data_quality_checks():
-    with TaskGroup(group_id="upload_local_files") as upload:
-        for file in os.listdir(FILE_DIR):
-            LocalFilesystemToS3Operator(
-                task_id=f"upload_{file}",
-                filename=f"{FILE_DIR}/{file}",
-                dest_key=f"incoming-data/{file}",
-                dest_bucket=S3_BUCKET,
-                aws_conn_id="aws_default",
-                replace=True,
-            )
+    upload = upload_local_files()
     s3_files = get_files_from_s3(S3_BUCKET, "incoming")
     import_stmt = get_import_statements(s3_files)
 
@@ -122,37 +171,7 @@ def data_quality_checks():
         },
     )
 
-    with TaskGroup(group_id="home_data_checks") as checks:
-        SQLColumnCheckOperator(
-            task_id="home_data_column_check",
-            conn_id="cratedb_connection",
-            table=TEMP_TABLE,
-            column_mapping={
-                "time": {
-                    "null_check": {"equal_to": 0},
-                    "unique_check": {"equal_to": 0},
-                },
-                "use_kw": {"null_check": {"equal_to": 0}},
-                "gen_kw": {"null_check": {"equal_to": 0}},
-                "temperature": {"min": {"geq_to": -20}, "max": {"less_than": 99}},
-                "humidity": {"min": {"geq_to": 0}, "max": {"less_than": 1}},
-            },
-        )
-
-        SQLTableCheckOperator(
-            task_id="home_data_table_check",
-            conn_id="cratedb_connection",
-            table=TEMP_TABLE,
-            checks={
-                "row_count_check": {"check_statement": "COUNT(*) > 100000"},
-                "total_usage_check": {
-                    "check_statement": "dishwasher + home_office + "
-                    + "fridge + wine_cellar + kitchen + "
-                    + "garage_door + microwave + barn + "
-                    + " well + living_room  <= house_overall"
-                },
-            },
-        )
+    checks = home_data_checks()
 
     move_data = PostgresOperator(
         task_id="move_to_table",
@@ -173,16 +192,7 @@ def data_quality_checks():
         trigger_rule="all_done",
     )
 
-    with TaskGroup(group_id="move_incoming_files") as processed:
-        for file in os.listdir(FILE_DIR):
-            S3CopyObjectOperator(
-                task_id=f"move_{file}",
-                aws_conn_id="aws_default",
-                source_bucket_name=S3_BUCKET,
-                source_bucket_key=f"incoming-data/{file}",
-                dest_bucket_name=S3_BUCKET,
-                dest_bucket_key=f"processed-data/{file}",
-            )
+    processed = move_incoming_files()
 
     delete_files = S3DeleteObjectsOperator.partial(
         task_id="delete_incoming_files", aws_conn_id="aws_default", bucket=S3_BUCKET
