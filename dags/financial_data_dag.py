@@ -91,7 +91,7 @@ def prepare_data(string_data):
 
 @dag(
     start_date=pendulum.datetime(2022, 1, 10, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
 )
 def financial_data_import():
@@ -110,4 +110,4 @@ def financial_data_import():
     ).expand(parameters=prepared_data)
 
 
-financial_data_dag = financial_data_import()
+financial_data_import()

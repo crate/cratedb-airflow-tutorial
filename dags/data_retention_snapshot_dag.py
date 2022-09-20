@@ -46,7 +46,7 @@ def generate_sql(query_file, policy):
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
 )
 def data_retention_snapshot():
@@ -71,4 +71,4 @@ def data_retention_snapshot():
     reallocate >> delete
 
 
-data_retention_snapshot_dag = data_retention_snapshot()
+data_retention_snapshot()

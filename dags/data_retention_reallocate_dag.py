@@ -51,7 +51,7 @@ def generate_sql_reallocate(policy):
 
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
-    schedule_interval="@daily",
+    schedule="@daily",
     catchup=False,
     template_searchpath=["include"],
 )
@@ -72,4 +72,4 @@ def data_retention_reallocate():
     reallocate >> track
 
 
-data_retention_reallocate_dag = data_retention_reallocate()
+data_retention_reallocate()
