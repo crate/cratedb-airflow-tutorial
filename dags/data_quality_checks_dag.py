@@ -46,6 +46,8 @@ SECRET_ACCESS_KEY = os.environ.get("SECRET_ACCESS_KEY")
 FILE_DIR = os.environ.get("FILE_DIR")
 TEMP_TABLE = os.environ.get("TEMP_TABLE")
 TABLE = os.environ.get("TABLE")
+INCOMING_DATA_PREFIX = "incoming-data"
+PROCESSED_DATA_PREFIX = "processed-data"
 
 
 def slack_failure_notification(context):
@@ -95,7 +97,7 @@ def list_local_files(directory):
 def upload_kwargs(file):
     return {
         "filename": f"{FILE_DIR}/{file}",
-        "dest_key": f"incoming-data/{file}",
+        "dest_key": f"{INCOMING_DATA_PREFIX}/{file}",
     }
 
 
@@ -151,7 +153,7 @@ def move_incoming_kwargs(file):
     # file includes the whole directory structure
     # Split into parts, replace the first one, and join again
     parts = file.split("/")
-    parts[0] = "processed-data"
+    parts[0] = PROCESSED_DATA_PREFIX
 
     return {
         "source_bucket_key": file,
@@ -178,7 +180,7 @@ def move_incoming_files(s3_files):
 )
 def data_quality_checks():
     upload = upload_local_files()
-    s3_files = get_files_from_s3(S3_BUCKET, "incoming")
+    s3_files = get_files_from_s3(S3_BUCKET, INCOMING_DATA_PREFIX)
     import_stmt = get_import_statements(s3_files)
 
     import_data = PostgresOperator.partial(
