@@ -1,138 +1,81 @@
 """
-Imports NYC Taxi data from S3 into CrateDB
+This DAG is intended to demonstrate how to import Parquet files into a CrateDB instance.
+This is performed using the NYC taxi datasetwhich is publicly available in their website
+here https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page the data is also available
+in their public S3 Bucket s3://nyc-tlc/trip data/. However due to its latest update, 
+the bucket is no longer accessible.
 
-A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-building-a-data-ingestion-pipeline/926
 
 Prerequisites
 -------------
+The variables S3_BUCKET_PATH and DESTINATION_PATH were configured 
+in Airflow interface on Admin > Variables as s3_path and destination_path, respectively.
 In the CrateDB schema "nyc_taxi", the tables "load_files_processed",
 "load_trips_staging" and "trips" need to be present before running the DAG.
 You can retrieve the CREATE TABLE statements from the file setup/taxi-schema.sql
 in this repository.
+
 """
-import logging
+
 from pathlib import Path
-import pendulum
-from airflow import DAG
+from airflow.decorators import task, dag
 from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.http.operators.http import SimpleHttpOperator
-from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
+from airflow.models import Variable
+import pendulum
 
+S3_BUCKET_PATH = Variable.get("s3_path")
+DESTINATION_PATH = Variable.get("destination_path")
 
-def get_processed_files(_ti):
-    pg_hook = PostgresHook(postgres_conn_id="cratedb_demo_connection")
-    records = pg_hook.get_records(
-        sql="SELECT file_name FROM nyc_taxi.load_files_processed"
-    )
+#The configuration of the DAG was done based on the info shared by NYC TLC here: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+#The documentation mentioned that the Parquet files are released @monthly since January 2009 
+@dag(dag_id="nyc-taxi-parquet",
+schedule='@monthly',
+start_date=pendulum.datetime(2009, 3, 1, tz="UTC"),
+catchup=True)
+def taskflow():
+    @task(task_id='format_file_name')
+    def format_file_name(ds=None):
+        #The files are released with 2 months of delay therefore the -2
+        currentMonth = int(ds.split('-')[1]) - 2
+        currentYear = int(ds.split('-')[0])
+        if currentMonth == 12:
+            currentYear = currentYear - 1
+        if currentMonth < 10:
+            currentMonth = f'0{currentMonth}'
+        return f'yellow_tripdata_{currentYear}-{currentMonth}'
 
-    # flatten nested list as there is only one column
-    return list(map(lambda record: record[0], records))
+    download_from_s3_csv = BashOperator(
+            task_id='download_from_s3_csv',
+            bash_command='parquet-tools csv "{{params.S3_BUCKET_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.parquet" > "{{params.DESTINATION_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.csv"',
+            params={'S3_BUCKET_PATH': S3_BUCKET_PATH, 'DESTINATION_PATH': DESTINATION_PATH},
+        )
 
-
-def clean_data_urls(ti):
-    data_urls_raw = ti.xcom_pull(task_ids="download_data_urls", key="return_value")
-
-    data_urls = data_urls_raw.split("\n")
-    # we only import Yellow tripdata for now due to different CSV schemas
-    data_urls_filtered = filter(lambda element: "yellow" in element, data_urls)
-
-    return list(data_urls_filtered)
-
-
-def identitfy_missing_urls(ti):
-    data_urls_processed = ti.xcom_pull(task_ids="get_processed_files")
-    data_urls_available = ti.xcom_pull(task_ids="clean_data_urls")
-
-    return list(set(data_urls_available) - set(data_urls_processed))
-
-
-def process_new_files(ti):
-    missing_urls = ti.xcom_pull(task_ids="identitfy_missing_urls")
-
-    for missing_url in missing_urls:
-        logging.info(missing_url)
-
-        file_name = missing_url.split("/").pop()
-
-        PostgresOperator(
-            task_id=f"copy_{file_name}",
-            postgres_conn_id="cratedb_demo_connection",
-            sql=f"""
-                    COPY nyc_taxi.load_trips_staging
-                    FROM '{missing_url}'
-                    WITH (format = 'csv', empty_string_as_null = true)
-                    RETURN SUMMARY;
-                """,
-        ).execute({})
-
-        PostgresOperator(
-            task_id=f"log_{file_name}",
-            postgres_conn_id="cratedb_demo_connection",
-            sql=Path("include/taxi-insert.sql").read_text(encoding="utf-8"),
-        ).execute({})
-
-        PostgresOperator(
-            task_id=f"mark_processed_{file_name}",
-            postgres_conn_id="cratedb_demo_connection",
-            sql=f"INSERT INTO nyc_taxi.load_files_processed VALUES ('{missing_url}');",
-        ).execute({})
-
-        PostgresOperator(
-            task_id=f"purge_staging_{file_name}",
-            postgres_conn_id="cratedb_demo_connection",
-            sql="DELETE FROM nyc_taxi.load_trips_staging;",
-        ).execute({})
-
-
-with DAG(
-    dag_id="nyc-taxi",
-    start_date=pendulum.datetime(2021, 11, 11, tz="UTC"),
-    schedule="@daily",
-    catchup=False,
-) as dag:
-    download_data_urls = SimpleHttpOperator(
-        task_id="download_data_urls",
-        method="GET",
-        http_conn_id="http_raw_github",
-        endpoint="toddwschneider/nyc-taxi-data/master/setup_files/raw_data_urls.txt",
-        headers={},
-    )
-
-    clean_data_urls = PythonOperator(
-        task_id="clean_data_urls",
-        python_callable=clean_data_urls,
-        op_kwargs={},
-    )
-
-    clean_data_urls << download_data_urls
-
-    get_processed_files = PythonOperator(
-        task_id="get_processed_files",
-        python_callable=get_processed_files,
-        op_kwargs={},
-    )
-
-    identitfy_missing_urls = PythonOperator(
-        task_id="identitfy_missing_urls",
-        python_callable=identitfy_missing_urls,
-        op_kwargs={},
-    )
-
-    identitfy_missing_urls << [clean_data_urls, get_processed_files]
-
-    # The staging table should be empty already. Purging it again in case of
-    # an abort or other error case.
-    purge_staging_init = PostgresOperator(
-        task_id="purge_staging_init",
+    copy_new_csv_file = PostgresOperator(
+        task_id="copy_new_csv_file",
         postgres_conn_id="cratedb_demo_connection",
-        sql="DELETE FROM nyc_taxi.load_trips_staging;",
+        sql="""
+                COPY nyc_taxi.load_trips_staging
+                FROM '{{params.DESTINATION_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.csv'
+                WITH (format = 'csv', empty_string_as_null = true)
+                RETURN SUMMARY;
+            """,
+        params={'S3_BUCKET_PATH': S3_BUCKET_PATH, 'DESTINATION_PATH': DESTINATION_PATH}
     )
 
-    process_new_files = PythonOperator(
-        task_id="process_new_files",
-        python_callable=process_new_files,
-        op_kwargs={},
+    log_new_csv_file = PostgresOperator(
+        task_id="log_new_csv_file",
+        postgres_conn_id="cratedb_demo_connection",
+        sql=Path('include/taxi-insert.sql').read_text(encoding="utf-8"),
     )
 
-    process_new_files << [identitfy_missing_urls, purge_staging_init]
+    purge_staging_new_csv_file = PostgresOperator(
+        task_id="purge_staging_new_csv_file",
+        postgres_conn_id="cratedb_demo_connection",
+        sql="DELETE FROM nyc_taxi.load_trips_staging;"
+    )
+    format_file_name() >> download_from_s3_csv
+    download_from_s3_csv >> copy_new_csv_file
+    copy_new_csv_file >> log_new_csv_file
+    log_new_csv_file >> purge_staging_new_csv_file
+taskflow()
