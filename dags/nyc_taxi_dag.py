@@ -2,13 +2,13 @@
 This DAG is intended to demonstrate how to import Parquet files into a CrateDB instance.
 This is performed using the NYC taxi datasetwhich is publicly available in their website
 here https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page the data is also available
-in their public S3 Bucket s3://nyc-tlc/trip data/. However due to its latest update, 
+in their public S3 Bucket s3://nyc-tlc/trip data/. However due to its latest update,
 the bucket is no longer accessible.
 
 
 Prerequisites
 -------------
-The variables S3_BUCKET_PATH and DESTINATION_PATH were configured 
+The variables S3_BUCKET_PATH and DESTINATION_PATH were configured
 in Airflow interface on Admin > Variables as s3_path and destination_path, respectively.
 In the CrateDB schema "nyc_taxi", the tables "load_files_processed",
 "load_trips_staging" and "trips" need to be present before running the DAG.
@@ -28,7 +28,7 @@ S3_BUCKET_PATH = Variable.get("s3_path")
 DESTINATION_PATH = Variable.get("destination_path")
 
 #The configuration of the DAG was done based on the info shared by NYC TLC here: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-#The documentation mentioned that the Parquet files are released @monthly since January 2009 
+#The documentation mentioned that the Parquet files are released @monthly since January 2009
 @dag(dag_id="nyc-taxi-parquet",
 schedule='@monthly',
 start_date=pendulum.datetime(2009, 3, 1, tz="UTC"),
@@ -47,7 +47,10 @@ def taskflow():
 
     download_from_s3_csv = BashOperator(
             task_id='download_from_s3_csv',
-            bash_command='parquet-tools csv "{{params.S3_BUCKET_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.parquet" > "{{params.DESTINATION_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.csv"',
+            bash_command='''
+                    parquet-tools csv "{{params.S3_BUCKET_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.parquet"
+                    > "{{params.DESTINATION_PATH}}{{ti.xcom_pull(task_ids="format_file_name")}}.csv"
+            ''',
             params={'S3_BUCKET_PATH': S3_BUCKET_PATH, 'DESTINATION_PATH': DESTINATION_PATH},
         )
 
