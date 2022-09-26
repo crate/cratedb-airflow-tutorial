@@ -30,7 +30,7 @@ DESTINATION_PATH = Variable.get("destination_path")
 #The configuration of the DAG was done based on the info shared by NYC TLC here: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 #The documentation mentioned that the Parquet files are released @monthly since January 2009 
 @dag(dag_id="nyc-taxi-parquet",
-schedule_interval='@monthly',
+schedule='@monthly',
 start_date=pendulum.datetime(2009, 3, 1, tz="UTC"),
 catchup=True)
 def taskflow():
@@ -78,4 +78,4 @@ def taskflow():
     download_step >> copy_new_csv_file
     copy_new_csv_file >> log_new_csv_file
     log_new_csv_file >> purge_staging_new_csv_file
-dag = taskflow()
+taskflow()
