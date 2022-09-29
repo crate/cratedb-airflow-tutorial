@@ -1,16 +1,10 @@
-CREATE TABLE IF NOT EXISTS "nyc_taxi"."load_files_processed" (
-   "file_name" TEXT,
-   PRIMARY KEY ("file_name")
-)
-CLUSTERED INTO 1 SHARDS;
-
 CREATE TABLE IF NOT EXISTS "nyc_taxi"."load_trips_staging" (
    "VendorID" INTEGER,
    "tpep_pickup_datetime" TEXT,
    "tpep_dropoff_datetime" TEXT,
-   "passenger_count" INTEGER,
+   "passenger_count" REAL,
    "trip_distance" REAL,
-   "RatecodeID" INTEGER,
+   "RatecodeID" REAL,
    "store_and_fwd_flag" TEXT,
    "PULocationID" INTEGER,
    "DOLocationID" INTEGER,
@@ -22,7 +16,8 @@ CREATE TABLE IF NOT EXISTS "nyc_taxi"."load_trips_staging" (
    "tolls_amount" REAL,
    "improvement_surcharge" REAL,
    "total_amount" REAL,
-   "congestion_surcharge" REAL
+   "congestion_surcharge" REAL,
+   "airport_fee" REAL
 );
 
 CREATE TABLE IF NOT EXISTS "nyc_taxi"."trips" (
@@ -52,6 +47,7 @@ CREATE TABLE IF NOT EXISTS "nyc_taxi"."trips" (
    "payment_type" TEXT,
    "trip_type" INTEGER,
    "pickup_location_id" INTEGER,
-   "dropoff_location_id" INTEGER
+   "dropoff_location_id" INTEGER,
+   "airport_fee" DOUBLE PRECISION
 )
 PARTITIONED BY ("pickup_year");
