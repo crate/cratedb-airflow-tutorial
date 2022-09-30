@@ -42,14 +42,14 @@ SECRET_ACCESS_KEY = Variable.get("SECRET_ACCESS_KEY", "secret-key")
     dag_id="nyc-taxi-parquet",
     schedule="@monthly",
     start_date=pendulum.datetime(2009, 3, 1, tz="UTC"),
-    catchup=False,
+    catchup=True,
 )
 def taskflow():
     @task(task_id="format_file_name")
     def formated_file_name(ds=None):
         # The files are released with 2 months of delay, therefore the .subtract(months=2)
         timestamp = pendulum.parse(ds)
-        timestamp = timestamp.subtract(months=3)
+        timestamp = timestamp.subtract(months=2)
         date_formated = timestamp.format("_YYYY-MM")
         return f"yellow_tripdata{date_formated}"
 
@@ -66,6 +66,7 @@ def taskflow():
             "DESTINATION_PATH": DESTINATION_PATH,
         },
     )
+
     copy_csv_to_s3 = LocalFilesystemToS3Operator(
         task_id="copy_csv_to_s3",
         filename=f"{DESTINATION_PATH}{formated_file_date}.csv",
