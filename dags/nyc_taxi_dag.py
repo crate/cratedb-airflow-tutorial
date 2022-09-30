@@ -46,19 +46,19 @@ SECRET_ACCESS_KEY = Variable.get("SECRET_ACCESS_KEY", "secret-key")
 )
 def taskflow():
     @task(task_id="format_file_name")
-    def formated_file_name(ds=None):
+    def format_file_name(ds=None):
         # The files are released with 2 months of delay, therefore the .subtract(months=2)
         timestamp = pendulum.parse(ds)
         timestamp = timestamp.subtract(months=2)
-        date_formated = timestamp.format("_YYYY-MM")
-        return f"yellow_tripdata{date_formated}"
+        date_formatted = timestamp.format("_YYYY-MM")
+        return f"yellow_tripdata{date_formatted}"
 
-    formated_file_date = formated_file_name()
+    formatted_file_date = format_file_name()
 
     process_parquet = BashOperator(
         task_id="process_parquet",
         bash_command="""
-            curl -o "${{params.DESTINATION_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.parquet" {{params.ORIGIN_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.parquet;
+            curl -o "${{params.DESTINATION_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.parquet" {{params.ORIGIN_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.parquet &&
             parquet-tools csv "${{params.DESTINATION_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.parquet" > "${{params.DESTINATION_PATH}}{{ task_instance.xcom_pull(task_ids='format_file_name')}}.csv"
         """,
         params={
@@ -69,8 +69,8 @@ def taskflow():
 
     copy_csv_to_s3 = LocalFilesystemToS3Operator(
         task_id="copy_csv_to_s3",
-        filename=f"{DESTINATION_PATH}{formated_file_date}.csv",
-        dest_key=f"{S3_KEY}{formated_file_date}.csv",
+        filename=f"{DESTINATION_PATH}{formatted_file_date}.csv",
+        dest_key=f"{S3_KEY}{formatted_file_date}.csv",
         aws_conn_id="s3_conn",
         replace=True,
     )
@@ -80,7 +80,7 @@ def taskflow():
         postgres_conn_id="cratedb_demo_connection",
         sql=f"""
                 COPY nyc_taxi.load_trips_staging
-                FROM 's3://{ACCESS_KEY_ID}:{SECRET_ACCESS_KEY}@{S3_BUCKET}{formated_file_date}.csv' 
+                FROM 's3://{ACCESS_KEY_ID}:{SECRET_ACCESS_KEY}@{S3_BUCKET}{formatted_file_date}.csv' 
                 WITH (format = 'csv', empty_string_as_null = true)
                 RETURN SUMMARY;
             """,
@@ -107,7 +107,7 @@ def taskflow():
     )
 
     chain(
-        formated_file_date,
+        formatted_file_date,
         process_parquet,
         copy_csv_to_s3,
         copy_csv_staging,
