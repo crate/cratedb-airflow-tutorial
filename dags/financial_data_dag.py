@@ -15,7 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 import pandas as pd
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.decorators import dag, task
 
 
@@ -99,9 +99,9 @@ def financial_data_import():
 
     prepared_data = prepare_data(yfinance_data)
 
-    PostgresOperator.partial(
+    SQLExecuteQueryOperator.partial(
         task_id="insert_data_task",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
         sql="""
             INSERT INTO doc.sp500 (closing_date, ticker, adjusted_close)
             VALUES (%(closing_date)s, %(ticker)s, %(adj_close)s)
