@@ -10,7 +10,7 @@ See the file setup/data_retention_schema.sql in this repository.
 """
 from pathlib import Path
 import pendulum
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
@@ -58,14 +58,14 @@ def generate_sql_reallocate(policy):
 def data_retention_reallocate():
     policies = map_policy.expand(policy=get_policies())
 
-    reallocate = PostgresOperator.partial(
+    reallocate = SQLExecuteQueryOperator.partial(
         task_id="reallocate_partitions",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
     ).expand(sql=generate_sql_reallocate.expand(policy=policies))
 
-    track = PostgresOperator.partial(
+    track = SQLExecuteQueryOperator.partial(
         task_id="add_tracking_information",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
         sql="data_retention_reallocate_tracking.sql",
     ).expand(parameters=policies)
 
