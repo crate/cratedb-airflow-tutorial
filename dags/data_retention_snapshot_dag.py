@@ -10,7 +10,7 @@ See the file setup/data_retention_schema.sql in this repository.
 """
 from pathlib import Path
 import pendulum
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
@@ -18,7 +18,7 @@ from airflow.decorators import dag, task
 @task
 def get_policies(ds=None):
     """Retrieve all partitions effected by a policy"""
-    pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
+    pg_hook = PostgresHook(conn_id="cratedb_connection")
     sql = Path("include/data_retention_retrieve_snapshot_policies.sql")
     return pg_hook.get_records(
         sql=sql.read_text(encoding="utf-8"), parameters={"day": ds}
@@ -58,14 +58,14 @@ def data_retention_snapshot():
         query_file="include/data_retention_delete.sql"
     ).expand(policy=policies)
 
-    reallocate = PostgresOperator.partial(
+    reallocate = SQLExecuteQueryOperator.partial(
         task_id="snapshot_partitions",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
     ).expand(sql=sql_statements_snapshot)
 
-    delete = PostgresOperator.partial(
+    delete = SQLExecuteQueryOperator.partial(
         task_id="delete_partitions",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
     ).expand(sql=sql_statements_delete)
 
     reallocate >> delete
