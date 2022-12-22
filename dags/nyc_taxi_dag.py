@@ -24,7 +24,7 @@ from airflow.decorators import task, dag
 from airflow.models.baseoperator import chain
 
 from airflow.operators.bash import BashOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.transfers.local_to_s3 import (
     LocalFilesystemToS3Operator,
 )
@@ -75,9 +75,9 @@ def taskflow():
         replace=True,
     )
 
-    copy_csv_staging = PostgresOperator(
+    copy_csv_staging = SQLExecuteQueryOperator(
         task_id="copy_csv_staging",
-        postgres_conn_id="cratedb_demo_connection",
+        conn_id="cratedb_demo_connection",
         sql=f"""
                 COPY nyc_taxi.load_trips_staging
                 FROM 's3://{ACCESS_KEY_ID}:{SECRET_ACCESS_KEY}@{S3_BUCKET}{formatted_file_date}.csv' 
@@ -86,15 +86,15 @@ def taskflow():
             """,
     )
 
-    copy_staging_to_trips = PostgresOperator(
+    copy_staging_to_trips = SQLExecuteQueryOperator(
         task_id="copy_staging_to_trips",
-        postgres_conn_id="cratedb_demo_connection",
+        conn_id="cratedb_demo_connection",
         sql=Path("include/taxi-insert.sql").read_text(encoding="utf-8"),
     )
 
-    delete_staging = PostgresOperator(
+    delete_staging = SQLExecuteQueryOperator(
         task_id="delete_staging",
-        postgres_conn_id="cratedb_demo_connection",
+        conn_id="cratedb_demo_connection",
         sql="DELETE FROM nyc_taxi.load_trips_staging;",
     )
 

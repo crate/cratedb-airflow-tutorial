@@ -6,7 +6,7 @@ A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apa
 import os
 import pendulum
 from airflow.decorators import dag, task_group
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.models.baseoperator import chain
 from include.table_exports import TABLES
@@ -15,9 +15,9 @@ from include.table_exports import TABLES
 @task_group
 def export_tables():
     for export_table in TABLES:
-        PostgresOperator(
+        SQLExecuteQueryOperator(
             task_id=f"copy_{export_table['table']}",
-            postgres_conn_id="cratedb_connection",
+            conn_id="cratedb_connection",
             sql="""
                     COPY {{params.table}} WHERE DATE_TRUNC('day', {{params.timestamp_column}}) = '{{macros.ds_add(ds, -1)}}'
                     TO DIRECTORY 's3://{{params.access}}:{{params.secret}}@{{params.target_bucket}}-{{macros.ds_add(ds, -1)}}';

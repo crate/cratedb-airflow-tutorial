@@ -25,7 +25,7 @@ import os
 import pendulum
 from airflow.decorators import dag, task, task_group
 from airflow.models.baseoperator import chain
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 from airflow.providers.common.sql.operators.sql import (
@@ -183,13 +183,14 @@ def data_quality_checks():
     s3_files = get_files_from_s3(S3_BUCKET, INCOMING_DATA_PREFIX)
     import_stmt = get_import_statements(s3_files)
 
-    import_data = PostgresOperator.partial(
-        task_id="import_data_to_cratedb", postgres_conn_id="cratedb_connection"
+    import_data = SQLExecuteQueryOperator.partial(
+        task_id="import_data_to_cratedb",
+        conn_id="cratedb_connection",
     ).expand(sql=import_stmt)
 
-    refresh = PostgresOperator(
+    refresh = SQLExecuteQueryOperator(
         task_id="refresh_table",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
         sql="""
                 REFRESH TABLE {{params.temp_table}};   
             """,
@@ -200,18 +201,18 @@ def data_quality_checks():
 
     checks = home_data_checks()
 
-    move_data = PostgresOperator(
+    move_data = SQLExecuteQueryOperator(
         task_id="move_to_table",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
         sql="""
                 INSERT INTO {{params.table}} SELECT * FROM {{params.temp_table}};   
             """,
         params={"table": TABLE, "temp_table": TEMP_TABLE},
     )
 
-    delete_data = PostgresOperator(
+    delete_data = SQLExecuteQueryOperator(
         task_id="delete_from_temp_table",
-        postgres_conn_id="cratedb_connection",
+        conn_id="cratedb_connection",
         sql="""
                 DELETE FROM {{params.temp_table}};   
             """,
