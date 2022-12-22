@@ -10,12 +10,3 @@ CREATE TABLE IF NOT EXISTS doc.retention_policies (
    PRIMARY KEY ("table_schema", "table_name", "strategy")
 )
 CLUSTERED INTO 1 SHARDS;
-
-CREATE TABLE IF NOT EXISTS doc.retention_policy_tracking (
-   "table_schema" TEXT,
-   "table_name" TEXT,
-   "strategy" TEXT,
-   "last_partition_value" TIMESTAMP WITH TIME ZONE NOT NULL,
-   PRIMARY KEY (table_schema, table_name, strategy)
-)
-CLUSTERED INTO 1 SHARDS;
