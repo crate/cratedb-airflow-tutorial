@@ -25,7 +25,6 @@ def get_policies(ds=None):
     )
 
 
-@task
 def map_policy(policy):
     """Map index-based policy to readable dict structure"""
     return {
@@ -38,35 +37,29 @@ def map_policy(policy):
     }
 
 
-@task
-def generate_sql(query_file, policy):
-    """Generate SQL statment for a given partition"""
-    return Path(query_file).read_text(encoding="utf-8").format(**policy)
-
-
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
     schedule="@daily",
     catchup=False,
 )
 def data_retention_snapshot():
-    policies = map_policy.expand(policy=get_policies())
-    sql_statements_snapshot = generate_sql.partial(
-        query_file="include/data_retention_snapshot.sql"
-    ).expand(policy=policies)
-    sql_statements_delete = generate_sql.partial(
-        query_file="include/data_retention_delete.sql"
-    ).expand(policy=policies)
+    policies = get_policies().map(map_policy)
 
     reallocate = SQLExecuteQueryOperator.partial(
         task_id="snapshot_partitions",
         conn_id="cratedb_connection",
-    ).expand(sql=sql_statements_snapshot)
+        sql="""
+            CREATE SNAPSHOT {{params.target_repository_name}}."{{params.schema}}.{{params.table}}-{{params.value}}"
+            TABLE {{params.table_fqn}} PARTITION ({{params.column}} = {{params.value}})
+            WITH ("wait_for_completion" = true);
+            """,
+    ).expand(params=policies)
 
     delete = SQLExecuteQueryOperator.partial(
         task_id="delete_partitions",
         conn_id="cratedb_connection",
-    ).expand(sql=sql_statements_delete)
+        sql="DELETE FROM {{params.table_fqn}} WHERE {{params.column}} = {{params.value}};",
+    ).expand(params=policies)
 
     reallocate >> delete
 

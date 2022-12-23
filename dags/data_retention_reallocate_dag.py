@@ -22,11 +22,11 @@ def get_policies(ds=None):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path("include/data_retention_retrieve_reallocate_policies.sql")
     return pg_hook.get_records(
-        sql=sql.read_text(encoding="utf-8"), parameters={"day": ds}
+        sql=sql.read_text(encoding="utf-8"),
+        parameters={"day": ds},
     )
 
 
-@task
 def map_policy(policy):
     """Map index-based policy to readable dict structure"""
     return {
@@ -40,16 +40,6 @@ def map_policy(policy):
     }
 
 
-@task
-def generate_sql_reallocate(policy):
-    """Generate SQL for reallocation"""
-    return (
-        Path("include/data_retention_reallocate.sql")
-        .read_text(encoding="utf-8")
-        .format(**policy)
-    )
-
-
 @dag(
     start_date=pendulum.datetime(2021, 11, 19, tz="UTC"),
     schedule="@daily",
@@ -57,12 +47,14 @@ def generate_sql_reallocate(policy):
     template_searchpath=["include"],
 )
 def data_retention_reallocate():
-    policies = map_policy.expand(policy=get_policies())
-
     SQLExecuteQueryOperator.partial(
         task_id="reallocate_partitions",
         conn_id="cratedb_connection",
-    ).expand(sql=generate_sql_reallocate.expand(policy=policies))
+        sql="""
+            ALTER TABLE {{params.table_fqn}} PARTITION ({{params.column}} = {{params.value}})
+            SET ("routing.allocation.require.{{params.attribute_name}}" = '{{params.attribute_value}}');
+            """,
+    ).expand(params=get_policies().map(map_policy))
 
 
 data_retention_reallocate()
