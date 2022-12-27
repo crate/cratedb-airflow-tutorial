@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS "nyc_taxi"."trips" (
    "trip_type" INTEGER,
    "pickup_location_id" INTEGER,
    "dropoff_location_id" INTEGER,
-   "airport_fee" DOUBLE PRECISION
+   "airport_fee" DOUBLE PRECISION,
+   PRIMARY KEY ("id")
 )
 PARTITIONED BY ("pickup_year");
