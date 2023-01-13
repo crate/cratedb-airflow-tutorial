@@ -20,7 +20,6 @@ TABLE=<name_permanent_data>
 ACCESS_KEY_ID=<your_aws_access_key>
 SECRET_ACCESS_KEY=<your_aws_secret_key>
 """
-
 import os
 import pendulum
 from airflow.decorators import dag, task, task_group
@@ -57,13 +56,15 @@ def slack_failure_notification(context):
     log_url = context.get("task_instance").log_url
     slack_msg = f"""
             :red_circle: Task Failed. 
-            *Task*: {task_id}  
-            *Dag*: {dag_id} 
+            *Task*: {task_id}
+            *DAG*: {dag_id}
             *Execution Time*: {exec_date}  
-            *Log Url*: {log_url} 
+            *Log URL*: {log_url}
             """
     failed_alert = SlackWebhookOperator(
-        task_id="slack_notification", http_conn_id="slack_webhook", message=slack_msg
+        task_id="slack_notification",
+        http_conn_id="slack_webhook",
+        message=slack_msg,
     )
     return failed_alert.execute(context=context)
 
@@ -79,19 +80,18 @@ def get_files_from_s3(bucket, prefix_value):
 
 
 @task
-def get_import_statements(files):
-    statements = []
-    for path in files:
-        sql = f"""
-                COPY {TEMP_TABLE} FROM 's3://{ACCESS_KEY_ID}:{SECRET_ACCESS_KEY}@{S3_BUCKET}/{path}' WITH (format='csv');
-              """
-        statements.append(sql)
-    return statements
-
-
-@task
 def list_local_files(directory):
     return list(filter(lambda entry: entry.endswith(".csv"), os.listdir(directory)))
+
+
+def copy_file_kwargs(file):
+    return {
+        "temp_table": TEMP_TABLE,
+        "access_key_id": ACCESS_KEY_ID,
+        "secret_access_key": SECRET_ACCESS_KEY,
+        "s3_bucket": S3_BUCKET,
+        "path": file,
+    }
 
 
 def upload_kwargs(file):
@@ -181,22 +181,23 @@ def move_incoming_files(s3_files):
 def data_quality_checks():
     upload = upload_local_files()
     s3_files = get_files_from_s3(S3_BUCKET, INCOMING_DATA_PREFIX)
-    import_stmt = get_import_statements(s3_files)
 
+    # pylint: disable=E1101
     import_data = SQLExecuteQueryOperator.partial(
         task_id="import_data_to_cratedb",
         conn_id="cratedb_connection",
-    ).expand(sql=import_stmt)
+        sql="""
+            COPY {{params.temp_table}}
+            FROM 's3://{{params.acces_key_id}}:{{params.secret_access_key}}@{{params.s3_bucket}}/{{params.path}}'
+            WITH (format = 'csv');
+            """,
+    ).expand(params=s3_files.map(upload_kwargs))
 
     refresh = SQLExecuteQueryOperator(
         task_id="refresh_table",
         conn_id="cratedb_connection",
-        sql="""
-                REFRESH TABLE {{params.temp_table}};   
-            """,
-        params={
-            "temp_table": TEMP_TABLE,
-        },
+        sql="REFRESH TABLE {{params.temp_table}};",
+        params={"temp_table": TEMP_TABLE},
     )
 
     checks = home_data_checks()
@@ -204,18 +205,17 @@ def data_quality_checks():
     move_data = SQLExecuteQueryOperator(
         task_id="move_to_table",
         conn_id="cratedb_connection",
-        sql="""
-                INSERT INTO {{params.table}} SELECT * FROM {{params.temp_table}};   
-            """,
-        params={"table": TABLE, "temp_table": TEMP_TABLE},
+        sql="INSERT INTO {{params.table}} SELECT * FROM {{params.temp_table}};",
+        params={
+            "table": TABLE,
+            "temp_table": TEMP_TABLE,
+        },
     )
 
     delete_data = SQLExecuteQueryOperator(
         task_id="delete_from_temp_table",
         conn_id="cratedb_connection",
-        sql="""
-                DELETE FROM {{params.temp_table}};   
-            """,
+        sql="DELETE FROM {{params.temp_table}};",
         params={"temp_table": TEMP_TABLE},
         trigger_rule="all_done",
     )
@@ -231,7 +231,6 @@ def data_quality_checks():
     chain(
         upload,
         s3_files,
-        import_stmt,
         import_data,
         refresh,
         checks,

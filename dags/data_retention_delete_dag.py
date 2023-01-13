@@ -15,18 +15,12 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.decorators import dag, task
 
 
-@task
-def generate_sql(policy):
-    """Generate DROP statment for a given partition"""
-    return (
-        Path("include/data_retention_delete.sql")
-        .read_text(encoding="utf-8")
-        .format(
-            table_fqn=policy[0],
-            column=policy[1],
-            value=policy[2],
-        )
-    )
+def map_policy(policy):
+    return {
+        "table_fqn": policy[0],
+        "column": policy[1],
+        "value": policy[2],
+    }
 
 
 @task
@@ -35,7 +29,8 @@ def get_policies(ds=None):
     pg_hook = PostgresHook(postgres_conn_id="cratedb_connection")
     sql = Path("include/data_retention_retrieve_delete_policies.sql")
     return pg_hook.get_records(
-        sql=sql.read_text(encoding="utf-8"), parameters={"day": ds}
+        sql=sql.read_text(encoding="utf-8"),
+        parameters={"day": ds},
     )
 
 
@@ -45,12 +40,11 @@ def get_policies(ds=None):
     catchup=False,
 )
 def data_retention_delete():
-    sql_statements = generate_sql.expand(policy=get_policies())
-
     SQLExecuteQueryOperator.partial(
         task_id="delete_partition",
         conn_id="cratedb_connection",
-    ).expand(sql=sql_statements)
+        sql="DELETE FROM {{params.table_fqn}} WHERE {{params.column}} = {{params.value}};",
+    ).expand(params=get_policies().map(map_policy))
 
 
 data_retention_delete()

@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS "iot"."smart_home_data" (
    "microwave" DOUBLE PRECISION,
    "living_room" DOUBLE PRECISION,
    "temperature" DOUBLE PRECISION,
-   "humidity" DOUBLE PRECISION
+   "humidity" DOUBLE PRECISION,
+   PRIMARY KEY ("time")
 );
 
 CREATE TABLE IF NOT EXISTS "iot"."smart_home_data_temp" (
@@ -33,5 +34,6 @@ CREATE TABLE IF NOT EXISTS "iot"."smart_home_data_temp" (
    "microwave" DOUBLE PRECISION,
    "living_room" DOUBLE PRECISION,
    "temperature" DOUBLE PRECISION,
-   "humidity" DOUBLE PRECISION
+   "humidity" DOUBLE PRECISION,
+   PRIMARY KEY ("time")
 );
