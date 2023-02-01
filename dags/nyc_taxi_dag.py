@@ -41,6 +41,7 @@ DESTINATION_PATH = (
     DESTINATION_PATH + "/" if not DESTINATION_PATH.endswith("/") else DESTINATION_PATH
 )
 
+
 # The configuration of the DAG was done based on the info shared by NYC TLC here: https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 # The documentation mentioned that the Parquet files are released monthly since January 2009
 @dag(

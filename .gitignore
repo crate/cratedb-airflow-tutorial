@@ -1,5 +1,6 @@
 .git
 .env
+.venv
 airflow_settings.yaml
 
 env
