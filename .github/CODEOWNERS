@@ -1,6 +1,4 @@
 # Each line is a file pattern followed by one or more owners.
-dags/financial_data_dag.py @rafaelasantana
-
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
 # The users listed below are global owners and will be
