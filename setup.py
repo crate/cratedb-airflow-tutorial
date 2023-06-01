@@ -4,7 +4,7 @@ setup(
     name="crate-airflow-tutorial",
     packages=find_packages(),
     python_requires=">=3.9",
-    install_requires=["apache-airflow==2.6.0"],
+    install_requires=["apache-airflow==2.6.1"],
     extras_require={
         "develop": [
             "pylint==2.17.4",
