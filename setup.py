@@ -10,6 +10,6 @@ setup(
             "pylint==2.17.4",
             "black==23.3.0",
         ],
-        "testing": ["pytest==7.3.1"],
+        "testing": ["pytest==7.4.0"],
     },
 )
