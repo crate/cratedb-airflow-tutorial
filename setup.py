@@ -8,11 +8,9 @@ setup(
     extras_require={
         "develop": [
             "pylint==2.17.4",
-            "black==23.3.0",
+            "black==23.7.0",
         ],
         "testing": [
-            # https://www.reddit.com/r/apache_airflow/comments/14oji77/airflow_262_and_pydantic_warningserrors/
-            "pydantic<2",
             "pytest==7.4.0",
         ],
     },
