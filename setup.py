@@ -7,7 +7,7 @@ setup(
     install_requires=["apache-airflow==2.6.3"],
     extras_require={
         "develop": [
-            "pylint==2.17.4",
+            "pylint==2.17.5",
             "black==23.7.0",
         ],
         "testing": [
