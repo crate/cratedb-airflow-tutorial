@@ -63,7 +63,7 @@ def slack_failure_notification(context):
             """
     failed_alert = SlackWebhookOperator(
         task_id="slack_notification",
-        http_conn_id="slack_webhook",
+        slack_webhook_conn_id="slack_webhook",
         message=slack_msg,
     )
     return failed_alert.execute(context=context)
