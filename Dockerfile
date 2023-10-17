@@ -1,1 +1,1 @@
-FROM quay.io/astronomer/astro-runtime:9.1.0
+FROM quay.io/astronomer/astro-runtime:9.2.0
