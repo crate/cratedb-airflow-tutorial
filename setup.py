@@ -11,7 +11,7 @@ setup(
             "black==23.12.1",
         ],
         "testing": [
-            "pytest==7.4.3",
+            "pytest==7.4.4",
         ],
     },
 )
