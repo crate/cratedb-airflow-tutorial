@@ -9,6 +9,7 @@ Prerequisites
 - Tables for storing retention policies need to be created once manually in
   CrateDB. See the file setup/data_retention_schema.sql in this repository.
 """
+
 from pathlib import Path
 import pendulum
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator

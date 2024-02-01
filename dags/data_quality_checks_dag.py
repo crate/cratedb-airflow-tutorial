@@ -20,6 +20,7 @@ TABLE=<name_permanent_data>
 ACCESS_KEY_ID=<your_aws_access_key>
 SECRET_ACCESS_KEY=<your_aws_secret_key>
 """
+
 import os
 import pendulum
 from airflow.decorators import dag, task, task_group

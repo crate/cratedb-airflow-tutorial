@@ -6,6 +6,7 @@ Prerequisites
 In CrateDB, the schema to store this data needs to be created once manually.
 See the file setup/financial_data_schema.sql in this repository.
 """
+
 import datetime
 import math
 import json
