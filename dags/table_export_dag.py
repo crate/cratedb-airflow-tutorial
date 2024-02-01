@@ -3,6 +3,7 @@ Regularly exports a table's rows to an S3 bucket as JSON files
 
 A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apache-airflow-automating-data-export-to-s3/901
 """
+
 import os
 import pendulum
 from airflow.decorators import dag, task_group

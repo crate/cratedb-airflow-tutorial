@@ -15,6 +15,7 @@ In the CrateDB schema "nyc_taxi", the tables "load_trips_staging" and "trips" ne
 present before running the DAG. You can retrieve the CREATE TABLE statements
 from the file setup/taxi-schema.sql in this repository.
 """
+
 import pendulum
 from airflow.models import Variable
 from airflow.decorators import task, dag
