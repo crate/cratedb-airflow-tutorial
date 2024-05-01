@@ -8,7 +8,7 @@ setup(
     extras_require={
         "develop": [
             "pylint==3.1.0",
-            "black==24.3.0",
+            "black==24.4.2",
         ],
         "testing": [
             "pytest==8.2.0",
