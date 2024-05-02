@@ -59,7 +59,7 @@ def slack_failure_notification(context):
             :red_circle: Task Failed. 
             *Task*: {task_id}
             *DAG*: {dag_id}
-            *Execution Time*: {exec_date}  
+            *Execution Time*: {exec_date}
             *Log URL*: {log_url}
             """
     failed_alert = SlackWebhookOperator(
