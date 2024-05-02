@@ -88,6 +88,7 @@ def taskflow():
     copy_csv_staging = SQLExecuteQueryOperator(
         task_id="copy_csv_staging",
         conn_id="cratedb_connection",
+        # pylint: disable=C0301
         sql=f"""
                 COPY nyc_taxi.load_trips_staging
                 FROM 's3://{ACCESS_KEY_ID}:{SECRET_ACCESS_KEY}@{S3_BUCKET}/{formatted_file_date}.csv'
