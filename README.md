@@ -1,4 +1,4 @@
-# crate-airflow-tutorial
+# CrateDB Airflow Tutorial
 Orchestration Project - Astronomer/Airflow tutorials
 
 
