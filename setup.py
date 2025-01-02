@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="crate-airflow-tutorial",
     packages=find_packages(),
-    python_requires=">=3.11",
-    install_requires=["apache-airflow==2.10.3"],
+    python_requires=">=3.12",
+    install_requires=["apache-airflow==2.10.4"],
     extras_require={
         "develop": [
             "pylint==3.3.3",
