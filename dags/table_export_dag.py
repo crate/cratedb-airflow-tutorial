@@ -8,7 +8,7 @@ import os
 import pendulum
 from airflow.decorators import dag, task_group
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.models.baseoperator import chain
 from include.table_exports import TABLES
 
