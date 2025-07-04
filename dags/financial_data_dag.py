@@ -52,10 +52,10 @@ def get_sp500_ticker_symbols():
 
 @task(execution_timeout=datetime.timedelta(minutes=3))
 def download_yfinance_data(ds=None):
-    """Downloads Adjusted Close data from S&P 500 companies"""
+    """Downloads Close data from S&P 500 companies"""
 
     tickers = get_sp500_ticker_symbols()
-    data = yf.download(tickers, start=ds)["Adj Close"]
+    data = yf.download(tickers, start=ds)["Close"]
     return data.to_json()
 
 
