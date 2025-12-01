@@ -19,6 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libarrow-dev
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
