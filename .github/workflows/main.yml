@@ -22,7 +22,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libarrow-dev
+          #sudo apt-get install libarrow-dev
 
       - name: Set up Python
         uses: actions/setup-python@v6
