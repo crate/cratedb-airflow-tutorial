@@ -18,8 +18,8 @@ from the file setup/taxi-schema.sql in this repository.
 
 import pendulum
 from airflow.models import Variable
-from airflow.decorators import task, dag
-from airflow.models.baseoperator import chain
+from airflow.sdk import task, dag
+from airflow.sdk.bases.operator import chain
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.transfers.local_to_s3 import (

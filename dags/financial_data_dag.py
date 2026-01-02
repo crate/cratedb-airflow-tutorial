@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 import yfinance as yf
 import pandas as pd
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 
 
 def get_sp500_ticker_symbols():
