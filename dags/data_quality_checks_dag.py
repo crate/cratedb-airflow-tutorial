@@ -23,8 +23,8 @@ SECRET_ACCESS_KEY=<your_aws_secret_key>
 
 import os
 import pendulum
-from airflow.decorators import dag, task, task_group
-from airflow.models.baseoperator import chain
+from airflow.sdk import dag, task, task_group
+from airflow.sdk.bases.operator import chain
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
@@ -56,7 +56,7 @@ def slack_failure_notification(context):
     exec_date = context.get("execution_date")
     log_url = context.get("task_instance").log_url
     slack_msg = f"""
-            :red_circle: Task Failed. 
+            :red_circle: Task Failed.
             *Task*: {task_id}
             *DAG*: {dag_id}
             *Execution Time*: {exec_date}
