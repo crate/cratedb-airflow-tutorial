@@ -10,7 +10,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.12",
     ],
-    install_requires=["apache-airflow==3.1.7"],
+    install_requires=["apache-airflow==3.1.8"],
     extras_require={
         "develop": [
             "ruff==0.15.4",
