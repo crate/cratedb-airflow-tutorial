@@ -1,4 +1,4 @@
-apache-airflow-providers-amazon>=7.3.0,<10
+apache-airflow-providers-amazon>=9.27.0,<10
 apache-airflow-providers-common-sql>=1.35.0,<2
 apache-airflow-providers-postgres>=5.4.0,<7
 apache-airflow-providers-slack>=9.10.0,<10
