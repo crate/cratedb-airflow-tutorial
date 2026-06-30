@@ -3,20 +3,20 @@ from setuptools import setup, find_packages
 setup(
     name="crate-airflow-tutorial",
     packages=find_packages(),
-    python_requires=">=3.13",
+    python_requires=">=3.14",
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
-    install_requires=["apache-airflow==3.2.1"],
+    install_requires=["apache-airflow==3.2.2"],
     extras_require={
         "develop": [
-            "ruff==0.15.15",
+            "ruff==0.15.20",
         ],
         "testing": [
-            "pytest==9.0.3",
+            "pytest==9.1.1",
         ],
     },
 )
