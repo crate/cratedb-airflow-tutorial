@@ -25,7 +25,7 @@ def get_sp500_ticker_symbols():
 
     # Getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-    r_html = requests.get(url, timeout=2.5).text
+    r_html = requests.get(url, timeout=2.5, headers={"User-Agent": "Airflow"}).text
     soup = BeautifulSoup(r_html, "html.parser")
 
     # The stock tickers are found in a table in the wikipedia page,
