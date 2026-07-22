@@ -76,7 +76,7 @@ def prepare_data(string_data):
                     {
                         "closing_date": closing_date,
                         "ticker": ticker,
-                        "adj_close": adj_close,
+                        "adj_close": float(adj_close),
                     }
                 )
             else:
