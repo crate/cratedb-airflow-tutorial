@@ -8,16 +8,17 @@ See the file setup/financial_data_schema.sql in this repository.
 """
 
 import datetime
-import math
 import json
 import logging
+import math
+
+import pandas as pd
 import pendulum
 import requests
-from bs4 import BeautifulSoup
 import yfinance as yf
-import pandas as pd
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.sdk import dag, task
+from bs4 import BeautifulSoup
 
 
 def get_sp500_ticker_symbols():

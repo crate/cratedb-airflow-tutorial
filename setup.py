@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="crate-airflow-tutorial",
@@ -13,7 +13,7 @@ setup(
     install_requires=["apache-airflow==3.3.0"],
     extras_require={
         "develop": [
-            "ruff==0.15.20",
+            "ruff==0.16.1",
         ],
         "testing": [
             "pytest==9.1.1",
