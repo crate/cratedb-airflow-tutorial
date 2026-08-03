@@ -11,6 +11,7 @@ Prerequisites
 """
 
 from pathlib import Path
+
 import pendulum
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook

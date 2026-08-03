@@ -18,13 +18,13 @@ from the file setup/taxi-schema.sql in this repository.
 
 import pendulum
 from airflow.models import Variable
-from airflow.sdk import task, dag
-from airflow.sdk.bases.operator import chain
-from airflow.providers.standard.operators.bash import BashOperator
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.transfers.local_to_s3 import (
     LocalFilesystemToS3Operator,
 )
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.sdk import dag, task
+from airflow.sdk.bases.operator import chain
 
 # The URL of the directory containing the Parquet files
 ORIGIN_PATH = Variable.get("ORIGIN_PATH", "test-path")

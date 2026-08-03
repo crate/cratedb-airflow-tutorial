@@ -22,23 +22,24 @@ SECRET_ACCESS_KEY=<your_aws_secret_key>
 """
 
 import os
+
 import pendulum
-from airflow.sdk import dag, task, task_group
-from airflow.sdk.bases.operator import chain
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
-from airflow.providers.common.sql.operators.sql import (
-    SQLColumnCheckOperator,
-    SQLTableCheckOperator,
-)
-from airflow.providers.amazon.aws.transfers.local_to_s3 import (
-    LocalFilesystemToS3Operator,
-)
 from airflow.providers.amazon.aws.operators.s3 import (
     S3CopyObjectOperator,
     S3DeleteObjectsOperator,
 )
+from airflow.providers.amazon.aws.transfers.local_to_s3 import (
+    LocalFilesystemToS3Operator,
+)
+from airflow.providers.common.sql.operators.sql import (
+    SQLColumnCheckOperator,
+    SQLExecuteQueryOperator,
+    SQLTableCheckOperator,
+)
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
+from airflow.sdk import dag, task, task_group
+from airflow.sdk.bases.operator import chain
 
 S3_BUCKET = os.environ.get("S3_BUCKET")
 ACCESS_KEY_ID = os.environ.get("ACCESS_KEY_ID")

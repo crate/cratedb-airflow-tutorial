@@ -5,11 +5,13 @@ A detailed tutorial is available at https://community.crate.io/t/cratedb-and-apa
 """
 
 import os
+
 import pendulum
-from airflow.sdk import dag, task_group
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.sdk import dag, task_group
 from airflow.sdk.bases.operator import chain
+
 from include.table_exports import TABLES
 
 

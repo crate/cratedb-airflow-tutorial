@@ -8,16 +8,17 @@ See the file setup/financial_data_schema.sql in this repository.
 """
 
 import datetime
-import math
 import json
 import logging
+import math
+
+import pandas as pd
 import pendulum
 import requests
-from bs4 import BeautifulSoup
 import yfinance as yf
-import pandas as pd
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.sdk import dag, task
+from bs4 import BeautifulSoup
 
 
 def get_sp500_ticker_symbols():
@@ -25,7 +26,7 @@ def get_sp500_ticker_symbols():
 
     # Getting the html code from S&P 500 wikipedia page
     url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-    r_html = requests.get(url, timeout=2.5).text
+    r_html = requests.get(url, timeout=2.5, headers={"User-Agent": "Airflow"}).text
     soup = BeautifulSoup(r_html, "html.parser")
 
     # The stock tickers are found in a table in the wikipedia page,
@@ -76,7 +77,7 @@ def prepare_data(string_data):
                     {
                         "closing_date": closing_date,
                         "ticker": ticker,
-                        "adj_close": adj_close,
+                        "adj_close": float(adj_close),
                     }
                 )
             else:
