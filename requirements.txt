@@ -5,6 +5,6 @@ apache-airflow-providers-slack>=9.10.2,<10
 apache-airflow[pandas]==3.3.1
 beautifulsoup4>=4.15.0,<5
 requests>=2.34.2,<3
-yfinance>=1.5.1,<1.7
+yfinance>=1.7.0,<1.8
 parquet-tools>=0.2.16,<1
 pendulum>=3.2.0,<4
