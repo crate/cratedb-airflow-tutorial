@@ -16,7 +16,7 @@ setup(
             "ruff==0.16.9",
         ],
         "testing": [
-            "pytest==9.1.1",
+            "pytest==9.2.0",
         ],
     },
 )
