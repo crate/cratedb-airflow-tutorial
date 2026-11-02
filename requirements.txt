@@ -7,4 +7,4 @@ beautifulsoup4>=4.15.0,<5
 requests>=2.34.2,<3
 yfinance>=1.7.0,<1.8
 parquet-tools>=0.2.16,<1
-pendulum>=3.2.0,<4
+pendulum>=3.3.0,<4
