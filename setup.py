@@ -13,7 +13,7 @@ setup(
     install_requires=["apache-airflow==3.3.2"],
     extras_require={
         "develop": [
-            "ruff==0.16.9",
+            "ruff==0.17.3",
         ],
         "testing": [
             "pytest==9.2.0",
